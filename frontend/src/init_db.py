@@ -1,0 +1,63 @@
+import sqlite3
+import uuid
+
+def init_database():
+
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+
+    # Tables
+    c.execute('''
+    create table households (
+        id text primary key,
+        name text not null,
+        location text,
+        created_at text default current_timestamp
+        )
+    ''')
+
+    c.execute('''
+    create table users (
+        id text primary key,
+        email text unique not null,
+        household_id text not null references households(id) on delete cascade,
+        created_at text default current_timestamp
+        )
+    ''')
+
+    c.execute('''
+    create table purchased_items (
+        id text primary key,
+        user_id text not null references users(id) on delete cascade,
+        household_id text not null references households(id) on delete cascade,
+        item_name text not null,
+        quantity real not null,
+        category text,
+        logged_at text default current_timestamp
+        )
+    ''')
+
+    c.execute('''
+    create table discarded_items (
+        id text primary key,
+        user_id text not null references users(id) on delete cascade,
+        household_id text not null references households(id) on delete cascade,
+        item_name text not null,
+        quantity_discarded real not null,
+        category text,
+        logged_at text default current_timestamp
+        )
+    ''')
+
+    # Indexes
+    c.execute('create index idx_users_household on user(household_id)')
+    c.execute('create index idx_purchased_household on purchased_items(household_id)')
+    c.execute('create index idx_discarded_household on discarded_items(household_id)')
+
+    conn.commit()
+    conn.close()
+
+if __name__ == '__main__':
+
+    init_database()
+    print('Database created')
