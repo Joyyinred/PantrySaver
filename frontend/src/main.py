@@ -1,5 +1,11 @@
 import flet as ft
+from init_db import init_database
+import os
 
+# Initialize sqlite db if none exists yet
+if not os.path.exists('database.db'):
+
+    init_database()
 
 def main(page: ft.Page):
     counter = ft.Text("0", size=50, data=0)
