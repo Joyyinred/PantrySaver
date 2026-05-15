@@ -1,41 +1,80 @@
 package com.pantrysaver.backend.service;
 
-
-// service is for business logic
-
+import com.pantrysaver.backend.model.Household;
 import com.pantrysaver.backend.model.User;
+import com.pantrysaver.backend.repository.HouseholdRepository;
 import com.pantrysaver.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
+    private final HouseholdRepository householdRepository;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository,
+                       HouseholdRepository householdRepository) {
         this.userRepository = userRepository;
+        this.householdRepository = householdRepository;
+    }
+    
+    // since supabase already handles register/login
+    // what we do here is to make sure the user exists
+    // connecting Supabase Auth identity to app’s own data model.
+    public User syncUser(UUID userId, String email) {
+
+        return userRepository.findById(userId)
+                .map(existingUser -> {
+                    if (!existingUser.getEmail().equals(email)) {
+                        existingUser.setEmail(email);
+                        return userRepository.save(existingUser);
+                    }
+                    return existingUser;
+                })
+                .orElseGet(() -> {
+                    Household household = new Household();
+                    household.setId(UUID.randomUUID());
+                    household.setName(email + "'s Household");
+                    household.setLocation(null);
+
+                    Household savedHousehold = householdRepository.save(household);
+
+                    User user = new User();
+                    user.setId(userId);
+                    user.setEmail(email);
+                    user.setHousehold(savedHousehold);
+
+                    return userRepository.save(user);
+                });
     }
 
-    public User syncUser(UUID id, String email) { // check if user exist, create new user
+    public User getCurrentUserProfile(UUID userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+    
+    // Join household
+    public User joinHousehold(UUID userId, UUID householdId) {
 
-        Optional<User> existingUser = userRepository.findById(id);
+        User user = getCurrentUserProfile(userId);
 
-        if (existingUser.isPresent()) {
-            return existingUser.get();
-        }
+        Household household = householdRepository.findById(householdId)
+                .orElseThrow(() -> new RuntimeException("Household not found"));
 
-        User user = new User();
-        user.setId(id);
-        user.setEmail(email);
+        user.setHousehold(household);
 
         return userRepository.save(user);
     }
+    
+    //  Update user details
+    public User updateUserEmail(UUID userId, String newEmail) {
 
-    public User getUser(UUID id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = getCurrentUserProfile(userId);
+
+        user.setEmail(newEmail);
+
+        return userRepository.save(user);
     }
 }

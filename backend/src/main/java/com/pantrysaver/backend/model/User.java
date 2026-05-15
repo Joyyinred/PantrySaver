@@ -15,7 +15,7 @@ public class User {
     private String email;
 
     @ManyToOne
-    @JoinColumn(name = "household_id")
+    @JoinColumn(name = "household_id", nullable = false)
     private Household household;
 
     @Column(name = "created_at")
