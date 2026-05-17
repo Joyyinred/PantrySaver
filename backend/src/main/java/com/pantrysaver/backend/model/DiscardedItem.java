@@ -2,6 +2,7 @@ package com.pantrysaver.backend.model;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+//import java.util.List;
 
 import jakarta.persistence.*;
 
@@ -21,7 +22,7 @@ public class DiscardedItem {
     private String itemName;
 
     @Column(name = "quantity_discarded", nullable = false)
-    private double quantity_discarded;
+    private double quantityDiscarded;
 
     @Column(name = "category")
     private String category;
@@ -36,12 +37,12 @@ public class DiscardedItem {
     public DiscardedItem(
             UUID householdId,
             String itemName,
-            double quantity_discarded,
+            double quantityDiscarded,
             String category
     ) {
         this.householdId = householdId;
         this.itemName = itemName;
-        this.quantity_discarded = quantity_discarded;
+        this.quantityDiscarded = quantityDiscarded;
         this.category = category;
         this.loggedAt = LocalDateTime.now();
     }
@@ -58,8 +59,8 @@ public class DiscardedItem {
         return itemName;
     }
 
-    public double getQuantity_Discarded() {
-        return quantity_discarded;
+    public double getQuantityDiscarded() {
+        return quantityDiscarded;
     }
 
     public String getCategory() {
@@ -77,13 +78,13 @@ public class DiscardedItem {
         this.itemName = itemName;
     }
 
-    public void setQuantity_Discarded(double quantity_discarded) {
-        if (quantity_discarded < 0) {
+    public void setQuantityDiscarded(double quantityDiscarded) {
+        if (quantityDiscarded < 0) {
             throw new IllegalArgumentException(
                 "Quantity cannot be negative"
             );
         }
-        this.quantity_discarded = quantity_discarded;
+        this.quantityDiscarded = quantityDiscarded;
     }
 
     public void setCategory(String category) {
