@@ -1,31 +1,91 @@
 import flet as ft
-from init_db import init_database
-import os
 
-# Initialize sqlite db if none exists yet
-if not os.path.exists('database.db'):
+from state.app_state import AppState
+from views.login_view import login_view
+from views.home_view import home_view
+from views.household_view import household_view
 
-    init_database()
 
 def main(page: ft.Page):
-    counter = ft.Text("0", size=50, data=0)
+    page.title = "PantrySaver"
+    page.window_width = 900
+    page.window_height = 700
 
-    def increment_click(e):
-        counter.data += 1
-        counter.value = str(counter.data)
+    state = AppState()
 
-    page.floating_action_button = ft.FloatingActionButton(
-        icon=ft.Icons.ADD, on_click=increment_click
-    )
-    page.add(
-        ft.SafeArea(
-            expand=True,
-            content=ft.Container(
-                content=counter,
-                alignment=ft.Alignment.CENTER,
-            ),
-        )
-    )
+    def go_home():
+        page.go("/home")
+
+    def go_household():
+        page.go("/household")
+
+    def logout():
+        state.access_token = None
+        state.refresh_token = None
+        state.current_user = None
+        state.current_household = None
+        state.household_members = []
+
+        page.go("/login")
+
+    def route_change(route):
+        page.views.clear()
+
+        if page.route == "/login":
+            page.views.append(
+                login_view(
+                    page=page,
+                    state=state,
+                    go_home=go_home,
+                )
+            )
+
+        elif page.route == "/home":
+            if not state.access_token:
+                page.go("/login")
+                return
+
+            page.views.append(
+                home_view(
+                    page=page,
+                    state=state,
+                    go_household=go_household,
+                    logout=logout,
+                )
+            )
+
+        elif page.route == "/household":
+            if not state.access_token:
+                page.go("/login")
+                return
+
+            page.views.append(
+                household_view(
+                    page=page,
+                    state=state,
+                    go_home=go_home,
+                )
+            )
+
+        else:
+            page.go("/login")
+            return
+
+        page.update()
+
+    def view_pop(view):
+        page.views.pop()
+
+        if page.views:
+            top_view = page.views[-1]
+            page.go(top_view.route)
+        else:
+            page.go("/login")
+
+    page.on_route_change = route_change
+    page.on_view_pop = view_pop
+
+    page.go("/login")
 
 
 ft.run(main)

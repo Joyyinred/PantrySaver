@@ -167,8 +167,8 @@ def household_view(page: ft.Page, state, go_home):
                                     controls=[
                                         ft.Text("Current household", weight=ft.FontWeight.BOLD),
                                         household_info,
-                                        ft.ElevatedButton(
-                                            "Refresh",
+                                        ft.Button(
+                                            content="Refresh",
                                             on_click=handle_refresh,
                                         ),
                                     ]
@@ -185,12 +185,12 @@ def household_view(page: ft.Page, state, go_home):
                                         household_location,
                                         ft.Row(
                                             controls=[
-                                                ft.ElevatedButton(
-                                                    "Update current household",
+                                                ft.Button(
+                                                    content="Update current household",
                                                     on_click=handle_update_household,
                                                 ),
-                                                ft.OutlinedButton(
-                                                    "Create new household",
+                                                ft.Button(
+                                                    content="Create new household",
                                                     on_click=handle_create_household,
                                                 ),
                                             ],
@@ -207,8 +207,8 @@ def household_view(page: ft.Page, state, go_home):
                                     controls=[
                                         ft.Text("Join household", weight=ft.FontWeight.BOLD),
                                         join_household_id,
-                                        ft.ElevatedButton(
-                                            "Join existing household",
+                                        ft.Button(
+                                            content="Join existing household",
                                             on_click=handle_join_household,
                                         ),
                                     ]
@@ -226,8 +226,8 @@ def household_view(page: ft.Page, state, go_home):
                                 ),
                             )
                         ),
-                        ft.OutlinedButton(
-                            "Leave and create personal household",
+                        ft.Button(
+                            content="Leave and create personal household",
                             on_click=handle_leave_household,
                         ),
                     ],

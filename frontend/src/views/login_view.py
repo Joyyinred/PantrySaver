@@ -94,14 +94,14 @@ def login_view(page: ft.Page, state, go_home):
         finally:
             set_loading(False)
 
-    login_button = ft.ElevatedButton(
-        text="Login",
+    login_button = ft.Button(
+        content="Login",
         width=160,
         on_click=handle_login,
     )
 
-    signup_button = ft.OutlinedButton(
-        text="Sign up",
+    signup_button = ft.Button(
+        content="Sign up",
         width=160,
         on_click=handle_signup,
     )
@@ -112,7 +112,7 @@ def login_view(page: ft.Page, state, go_home):
             ft.SafeArea(
                 content=ft.Container(
                     expand=True,
-                    alignment=ft.alignment.center,
+                    alignment=ft.Alignment.CENTER,
                     content=ft.Column(
                         width=400,
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,

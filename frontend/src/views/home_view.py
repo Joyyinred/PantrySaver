@@ -15,7 +15,7 @@ def home_view(page: ft.Page, state, go_household, logout):
             ft.AppBar(
                 title=ft.Text("PantrySaver"),
                 actions=[
-                    ft.TextButton("Logout", on_click=lambda e: logout()),
+                    ft.Button(content="Logout", on_click=lambda e: logout()),
                 ],
             ),
             ft.Container(
@@ -52,8 +52,8 @@ def home_view(page: ft.Page, state, go_household, logout):
                         ),
                         ft.Row(
                             controls=[
-                                ft.ElevatedButton(
-                                    "Manage household",
+                                ft.Button(
+                                    content="Manage household",
                                     on_click=lambda e: go_household(),
                                 ),
                             ]
