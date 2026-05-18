@@ -72,7 +72,7 @@ def map_items_with_categories():
         return item_categories
 
     except Exception as e:
-        print(f"could not fetch item categories (worker.get_categories): {e}")
+        print(f"could not fetch item categories (worker.map_items_with_categories): {e}")
         return {}
 
 
@@ -120,7 +120,7 @@ def process_household(household_id: str, item_categories: dict):
     try:
         supabase.table("households").update({"modified": False}).eq("id", household_id).execute()
     except Exception as e:
-        print(f"[Worker Error] Resetting verification flags: {e}")
+        print(f"could not reset modified (woker.process_household): {e}")
 
 
 def fetch_household_name(household_id: str):
