@@ -24,7 +24,7 @@ def run_algorithm(how_frequent: int = 60,
                     shortterm_change_in_days,
                     longterm_change_in_days
                     )
-
+        print("Finished Iteration")
         time.sleep(how_frequent)
 
 

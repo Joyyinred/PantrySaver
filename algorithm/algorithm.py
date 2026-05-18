@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from enum import Enum
+from db import supabase
 
 
 class ItemStatus(Enum):
@@ -97,7 +98,7 @@ def give_recommendation(
 
         if last_purchase and (not last_discard or last_purchase > last_discard):
             messages.append(f"  Reminder: looks like you bought some {item_name} recently. Let's eat some.")
-        
+
         if forgot_to_log:
             messages.append(f"  Log question: Did you forget to log purchase of {item_name}?")
 
@@ -108,10 +109,35 @@ def give_recommendation(
 
         if last_purchase and last_discard and last_purchase > last_discard:
             messages.append(f"  Alert: high chance that you have some {item_name}, please eat.")
-        
+
         if forgot_to_log:
             messages.append(f"  Log question: Did you forget to log purchase of {item_name}?")
 
         messages.append(f"  Question: Do you have any of these ({item_name}) at home? can eat or donate.")
 
     return messages
+
+
+def calcuate_ratios(household_id, purchased, discarded):
+    discarded_unique = {d["item_name"] for d in discarded}
+    for name in discarded_unique:
+        purchased_quant = 0
+        discarded_quant = 0
+
+        for i in purchased:
+            if i["item_name"] == name:
+                purchased_quant += i["quantity"]
+
+        for i in discarded:
+            if i["item_name"] == name:
+                discarded_quant += i["quantity_discarded"]
+
+        if purchased_quant == 0:
+            continue
+
+        ratio = discarded_quant / purchased_quant
+
+        supabase.table("ratios").upsert(
+            {"item_name": name, "household_id": household_id, "ratio": ratio},
+            on_conflict="item_name,household_id"
+        ).execute()

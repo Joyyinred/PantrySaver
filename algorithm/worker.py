@@ -88,6 +88,8 @@ def process_household(
     print()
     purchased, discarded = get_purchased_and_discarded_items(household_id)
 
+    algorithm.calcuate_ratios(household_id, purchased, discarded)
+
     unique_items = set()
 
     for purchase in purchased:
@@ -116,7 +118,7 @@ def process_household(
             )
 
         recommendations = algorithm.give_recommendation(
-            item_name, 
+            item_name,
             status,
             specific_purchases,
             specific_discards,
