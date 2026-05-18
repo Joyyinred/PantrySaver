@@ -8,11 +8,14 @@ class ItemStatus(Enum):
     red = "red"
 
 
-def evaluate_item_status(purchased_items: list, discarded_items: list):
+def evaluate_item_status(
+        purchased_items: list,
+        discarded_items: list
+        ) -> tuple[ItemStatus, bool]:
 
     now = datetime.now(timezone.utc)
     discard_count = len(discarded_items)
-    is_in_stock = len(purchased_items) > 0
+    was_logged_as_purchased = len(purchased_items) > 0
 
     if discard_count == 0:
         status = ItemStatus.green
@@ -35,18 +38,23 @@ def evaluate_item_status(purchased_items: list, discarded_items: list):
         elif days_since_waste >= 30 and status == ItemStatus.red:
             status = ItemStatus.yellow
 
-    return status, is_in_stock
+    return status, was_logged_as_purchased
 
 
-def give_recommendation(item_name: str, status: ItemStatus, in_stock: bool, tags: list) -> list:
+def give_recommendation(
+        item_name: str, status: ItemStatus,
+        was_logged_as_purchased: bool,
+        categories: list
+        ) -> list:
 
-    categories = f" [{', '.join(tags)}]" if tags else ""
+    categories = f" [{', '.join(categories)}]" if categories else ""
     messages = [f"Product: {item_name.capitalize()}, categories: {categories}, internal label: {status.name}"]
 
-    if status == ItemStatus.yellow and in_stock:
+    if status == ItemStatus.yellow:
         messages.append(f"  Tip: You still have {item_name} left. Try consuming them soon to prevent waste!")
+
     elif status == ItemStatus.red:
-        if in_stock:
+        if was_logged_as_purchased:
             messages.append(f"  Alert: You have {item_name} left! Let's eat some!")
         else:
             messages.append(f"  Log question: Did you buy more {item_name} recently? Keep your tracking log current.")
