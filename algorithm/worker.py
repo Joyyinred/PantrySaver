@@ -84,7 +84,8 @@ def process_household(
         ):
 
     print()
-    print(f"recommendations for {fetch_household_name(household_id)}")
+    print(f"Recommendations for {fetch_household_name(household_id)}:")
+    print()
     purchased, discarded = get_purchased_and_discarded_items(household_id)
 
     unique_items = set()
@@ -107,7 +108,7 @@ def process_household(
 
         categories = item_categories.get(item_name, [])
 
-        status, is_in_stock = algorithm.evaluate_item_status(
+        status, was_logged_as_purchased = algorithm.evaluate_item_status(
             specific_purchases,
             specific_discards,
             shortterm_change_in_days,
@@ -115,8 +116,10 @@ def process_household(
             )
 
         recommendations = algorithm.give_recommendation(
-            item_name, status,
-            is_in_stock,
+            item_name, 
+            status,
+            specific_purchases,
+            specific_discards,
             categories
             )
 

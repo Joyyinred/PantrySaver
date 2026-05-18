@@ -28,8 +28,8 @@ def evaluate_item_status(
 
     if discarded_items:
         timestamps = []
-        for d in discarded_items:
-            dt_str = d["logged_at"].replace("Z", "+00:00")
+        for discarded_item in discarded_items:
+            dt_str = discarded_item["logged_at"].replace("Z", "+00:00")
             timestamps.append(datetime.fromisoformat(dt_str))
 
         last_discard_date = max(timestamps)
@@ -45,20 +45,73 @@ def evaluate_item_status(
 
 def give_recommendation(
         item_name: str, status: ItemStatus,
-        was_logged_as_purchased: bool,
+        purchased_items: list,
+        discarded_items: list,
         categories: list
         ) -> list:
 
-    categories = f" [{', '.join(categories)}]" if categories else ""
-    messages = [f"Product: {item_name.capitalize()}, categories: {categories}, internal label: {status.name}"]
+    categories_str = f" [{', '.join(categories)}]" if categories else ""
+    messages = [f"Product: {item_name.capitalize()}, categories: {categories_str}, internal label: {status.name}"]
+
+    # a helper for timestamps
+    def get_sorted_timestamps(items_list, key="logged_at"):
+
+        timestamps = []
+
+        for item in items_list:
+            dt_str = item[key].replace("Z", "+00:00")
+            timestamps.append(datetime.fromisoformat(dt_str))
+
+        return sorted(timestamps)
+
+    purchase_dates = get_sorted_timestamps(purchased_items)
+    discard_dates = get_sorted_timestamps(discarded_items)
+
+    last_purchase = purchase_dates[-1] if purchase_dates else None
+    last_discard = discard_dates[-1] if discard_dates else None
+    second_last_discard = discard_dates[-2] if len(discard_dates) >= 2 else None
+
+    was_logged_between_last_two_discards = False
+    was_logged_before_only_discard = False
+
+    if last_purchase:
+
+        if last_discard and second_last_discard:
+
+            if second_last_discard < last_purchase < last_discard:
+                was_logged_between_last_two_discards = True
+
+        if last_discard and not second_last_discard:
+
+            if last_purchase < last_discard:
+                was_logged_before_only_discard = True
+
+    forgot_to_log = False
+
+    if len(discard_dates) >= 2 and not was_logged_between_last_two_discards:
+        forgot_to_log = True
+    elif len(discard_dates) == 1 and not was_logged_before_only_discard:
+        forgot_to_log = True
 
     if status == ItemStatus.yellow:
-        messages.append(f"  Tip: You still have {item_name} left. Try consuming them soon to prevent waste!")
+
+        if last_purchase and (not last_discard or last_purchase > last_discard):
+            messages.append(f"  Reminder: looks like you bought some {item_name} recently. Let's eat some.")
+        
+        if forgot_to_log:
+            messages.append(f"  Log question: Did you forget to log purchase of {item_name}?")
+
+        if categories:
+            messages.append(f"  Category suggestion: Do you have any product in this category ({', '.join(categories)})? You can eat some.")
 
     elif status == ItemStatus.red:
-        if was_logged_as_purchased:
-            messages.append(f"  Alert: You have {item_name} left! Let's eat some!")
-        else:
-            messages.append(f"  Log question: Did you buy more {item_name} recently? Keep your tracking log current.")
+
+        if last_purchase and last_discard and last_purchase > last_discard:
+            messages.append(f"  Alert: high chance that you have some {item_name}, please eat.")
+        
+        if forgot_to_log:
+            messages.append(f"  Log question: Did you forget to log purchase of {item_name}?")
+
+        messages.append(f"  Question: Do you have any of these ({item_name}) at home? can eat or donate.")
 
     return messages
