@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime, timedelta, timezone
 from db import supabase
 
