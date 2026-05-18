@@ -1,5 +1,6 @@
 import time
 import worker
+import argparse
 
 
 def run_algorithm(how_frequent: int = 60):
@@ -20,4 +21,7 @@ def run_algorithm(how_frequent: int = 60):
 
 
 if __name__ == "__main__":
-    run_algorithm()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--freq", type=int, default=None)
+    args = parser.parse_args()
+    run_algorithm(args.freq)
