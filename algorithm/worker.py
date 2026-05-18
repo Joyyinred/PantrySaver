@@ -76,7 +76,12 @@ def map_items_with_categories():
         return {}
 
 
-def process_household(household_id: str, item_categories: dict):
+def process_household(
+        household_id: str,
+        item_categories: dict,
+        shortterm_change_in_days: int,
+        longterm_change_in_days: int
+        ):
 
     print()
     print(f"recommendations for {fetch_household_name(household_id)}")
@@ -104,7 +109,9 @@ def process_household(household_id: str, item_categories: dict):
 
         status, is_in_stock = algorithm.evaluate_item_status(
             specific_purchases,
-            specific_discards
+            specific_discards,
+            shortterm_change_in_days,
+            longterm_change_in_days
             )
 
         recommendations = algorithm.give_recommendation(

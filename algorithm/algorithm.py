@@ -10,7 +10,9 @@ class ItemStatus(Enum):
 
 def evaluate_item_status(
         purchased_items: list,
-        discarded_items: list
+        discarded_items: list,
+        shortterm_change_in_days: int = 30,
+        longterm_change_in_days: int = 90
         ) -> tuple[ItemStatus, bool]:
 
     now = datetime.now(timezone.utc)
@@ -33,9 +35,9 @@ def evaluate_item_status(
         last_discard_date = max(timestamps)
         days_since_waste = (now - last_discard_date).days
 
-        if days_since_waste >= 90:
+        if days_since_waste >= longterm_change_in_days:
             status = ItemStatus.green
-        elif days_since_waste >= 30 and status == ItemStatus.red:
+        elif days_since_waste >= shortterm_change_in_days and status == ItemStatus.red:
             status = ItemStatus.yellow
 
     return status, was_logged_as_purchased
