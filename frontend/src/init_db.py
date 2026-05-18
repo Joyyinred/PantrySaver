@@ -33,7 +33,6 @@ def init_database():
         household_id text not null references households(id) on delete cascade,
         item_name text not null,
         quantity real not null,
-        category text,
         logged_at text default current_timestamp
         )
     ''')
@@ -45,7 +44,6 @@ def init_database():
         household_id text not null references households(id) on delete cascade,
         item_name text not null,
         quantity_discarded real not null,
-        category text,
         logged_at text default current_timestamp
         )
     ''')
