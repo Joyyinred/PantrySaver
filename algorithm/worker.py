@@ -1,6 +1,7 @@
 from db import supabase
 import algorithm
 
+
 def get_modified_households():
 
     try:
@@ -11,12 +12,13 @@ def get_modified_households():
             .execute()
         )
         return [row["id"] for row in response.data]
-    
+
     except Exception as e:
         print()
         print(f"could not fetch modified households (worker.get_households): {e}")
 
         return []
+
 
 def get_purchased_and_discarded_items(household_id: str):
 
@@ -27,7 +29,7 @@ def get_purchased_and_discarded_items(household_id: str):
             .eq("household_id", household_id)
             .execute()
         )
-        
+
         discarded = (
             supabase.table("discarded_items")
             .select("*")
@@ -36,10 +38,11 @@ def get_purchased_and_discarded_items(household_id: str):
         )
 
         return purchased.data, discarded.data
-    
+
     except Exception as e:
         print(f"could not fetch purchased and discarded items (worker.get_items): {e}")
         return [], []
+
 
 def map_items_with_categories():
 
@@ -53,9 +56,9 @@ def map_items_with_categories():
         item_categories = {}
 
         for row in response.data:
-            
+
             name = row["item_name"]
-            
+
             cat_name = (
                 row["categories"]["name"]
                 if isinstance(row["categories"], dict)
@@ -67,10 +70,11 @@ def map_items_with_categories():
             item_categories[name].append(cat_name)
 
         return item_categories
-    
+
     except Exception as e:
         print(f"could not fetch item categories (worker.get_categories): {e}")
         return {}
+
 
 def process_household(household_id: str, item_categories: dict):
 
@@ -97,18 +101,18 @@ def process_household(household_id: str, item_categories: dict):
                 specific_discards.append(d)
 
         categories = item_categories.get(item_name, [])
-        
+
         status, is_in_stock = algorithm.evaluate_item_status(
             specific_purchases,
             specific_discards
             )
-        
+
         recommendations = algorithm.give_recommendation(
             item_name, status,
             is_in_stock,
             categories
             )
-        
+
         for recommendation in recommendations:
             print(recommendation)
 
@@ -117,6 +121,7 @@ def process_household(household_id: str, item_categories: dict):
         supabase.table("households").update({"modified": False}).eq("id", household_id).execute()
     except Exception as e:
         print(f"[Worker Error] Resetting verification flags: {e}")
+
 
 def fetch_household_name(household_id: str):
 
@@ -129,7 +134,7 @@ def fetch_household_name(household_id: str):
             .execute()
         )
         return response.data["name"]
-    
+
     except Exception as e:
         print(f"could not fetch household name (worker.fetch_household_name): {e}")
         return "no household name"
