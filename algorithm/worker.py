@@ -88,7 +88,7 @@ def process_household(
     print()
     purchased, discarded = get_purchased_and_discarded_items(household_id)
 
-    algorithm.calcuate_ratios(household_id, purchased, discarded)
+    item_ratios = algorithm.calculate_ratios(household_id, purchased, discarded)
 
     unique_items = set()
 
@@ -125,8 +125,13 @@ def process_household(
             categories
             )
 
+        current_ratio = item_ratios.get(item_name, 0.0)
+
+        print(f"waste ratio for {item_name}: {current_ratio:.1%}")
+
         for recommendation in recommendations:
             print(recommendation)
+        print()
 
     # TODO: add logic for changing modified variable in the database
     try:
