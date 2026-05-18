@@ -11,7 +11,7 @@ def run_algorithm(how_frequent: int = 60):
         
         if modified_households:
             for household_id in modified_households:
-                worker.process_household_behavior(household_id)
+                worker.process_household(household_id)
         
         time.sleep(how_frequent)
 
