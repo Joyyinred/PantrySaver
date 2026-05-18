@@ -12,6 +12,7 @@ def init_database():
         id text primary key,
         name text not null,
         location text,
+        modified boolean default 1,
         created_at text default current_timestamp
         )
     ''')
@@ -32,7 +33,6 @@ def init_database():
         household_id text not null references households(id) on delete cascade,
         item_name text not null,
         quantity real not null,
-        category text,
         logged_at text default current_timestamp
         )
     ''')
@@ -44,8 +44,22 @@ def init_database():
         household_id text not null references households(id) on delete cascade,
         item_name text not null,
         quantity_discarded real not null,
-        category text,
         logged_at text default current_timestamp
+        )
+    ''')
+
+    c.execute('''
+    create table categories (
+        id text primary key,
+        name text unique not null
+        )
+    ''')
+
+    c.execute('''
+    create table item_categories (
+        item_name text not null,
+        category_id text not null references categories(id) on delete cascade,
+        primary key (item_name, category_id)
         )
     ''')
 
