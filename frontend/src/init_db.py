@@ -12,6 +12,7 @@ def init_database():
         id text primary key,
         name text not null,
         location text,
+        modified boolean default 1,
         created_at text default current_timestamp
         )
     ''')
