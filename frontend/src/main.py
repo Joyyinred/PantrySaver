@@ -8,8 +8,19 @@ from views.household_view import household_view
 
 def main(page: ft.Page):
     page.title = "PantrySaver"
-    page.window_width = 900
-    page.window_height = 700
+
+    # Mobile-like window size
+    page.window_width = 410
+    page.window_height = 780
+    page.window_resizable = False
+
+    page.padding = 0
+    page.bgcolor = "#F7F5EF"
+
+    page.theme = ft.Theme(
+        color_scheme_seed="#4F8A5B",
+        font_family="Arial",
+    )
 
     state = AppState()
 
@@ -25,7 +36,6 @@ def main(page: ft.Page):
         state.current_user = None
         state.current_household = None
         state.household_members = []
-
         page.go("/login")
 
     def route_change(route):
@@ -77,8 +87,7 @@ def main(page: ft.Page):
         page.views.pop()
 
         if page.views:
-            top_view = page.views[-1]
-            page.go(top_view.route)
+            page.go(page.views[-1].route)
         else:
             page.go("/login")
 

@@ -4,26 +4,76 @@ from api.supabase_auth import login, signup
 from api.backend_api import sync_user
 
 
+GREEN = "#4F8A5B"
+DARK_GREEN = "#2F5D3A"
+CREAM = "#F7F5EF"
+CARD = "#FFFFFF"
+TEXT_DARK = "#263A29"
+TEXT_MUTED = "#6E7D6B"
+
+
+def primary_button(label, on_click):
+    return ft.Button(
+        content=label,
+        width=320,
+        height=48,
+        bgcolor=GREEN,
+        color="white",
+        on_click=on_click,
+    )
+
+
+def secondary_button(label, on_click):
+    return ft.Button(
+        content=label,
+        width=320,
+        height=48,
+        bgcolor="#E8EFE5",
+        color=DARK_GREEN,
+        on_click=on_click,
+    )
+
+
 def login_view(page: ft.Page, state, go_home):
     email_field = ft.TextField(
         label="Email",
-        width=350,
+        width=320,
         keyboard_type=ft.KeyboardType.EMAIL,
+        border_radius=14,
+        bgcolor="#FAFAFA",
     )
 
     password_field = ft.TextField(
         label="Password",
         password=True,
         can_reveal_password=True,
-        width=350,
+        width=320,
+        border_radius=14,
+        bgcolor="#FAFAFA",
     )
 
-    message = ft.Text("", color=ft.Colors.RED)
+    message = ft.Text("", color=ft.Colors.RED, size=12, width=320)
 
     def set_loading(is_loading: bool):
         login_button.disabled = is_loading
         signup_button.disabled = is_loading
         page.update()
+
+    def save_session_and_go_home(result):
+        state.access_token = result.get("access_token")
+        state.refresh_token = result.get("refresh_token")
+
+        if not state.access_token:
+            message.value = (
+                "No access token returned. If this is signup, check Supabase email confirmation settings."
+            )
+            return
+
+        user = sync_user(state.access_token)
+        state.current_user = user
+        state.current_household = user.get("household")
+
+        go_home()
 
     def handle_login(e):
         try:
@@ -38,19 +88,7 @@ def login_view(page: ft.Page, state, go_home):
                 return
 
             result = login(email, password)
-
-            state.access_token = result.get("access_token")
-            state.refresh_token = result.get("refresh_token")
-
-            if not state.access_token:
-                message.value = "Login failed: no access token returned."
-                return
-
-            user = sync_user(state.access_token)
-            state.current_user = user
-            state.current_household = user.get("household")
-
-            go_home()
+            save_session_and_go_home(result)
 
         except Exception as ex:
             message.value = f"Login failed: {ex}"
@@ -71,22 +109,7 @@ def login_view(page: ft.Page, state, go_home):
                 return
 
             result = signup(email, password)
-
-            state.access_token = result.get("access_token")
-            state.refresh_token = result.get("refresh_token")
-
-            if not state.access_token:
-                message.value = (
-                    "Signup succeeded, but no access token was returned. "
-                    "Email confirmation may be enabled in Supabase."
-                )
-                return
-
-            user = sync_user(state.access_token)
-            state.current_user = user
-            state.current_household = user.get("household")
-
-            go_home()
+            save_session_and_go_home(result)
 
         except Exception as ex:
             message.value = f"Signup failed: {ex}"
@@ -94,50 +117,78 @@ def login_view(page: ft.Page, state, go_home):
         finally:
             set_loading(False)
 
-    login_button = ft.Button(
-        content="Login",
-        width=160,
-        on_click=handle_login,
-    )
-
-    signup_button = ft.Button(
-        content="Sign up",
-        width=160,
-        on_click=handle_signup,
-    )
+    login_button = primary_button("Login", handle_login)
+    signup_button = secondary_button("Create account", handle_signup)
 
     return ft.View(
         route="/login",
+        bgcolor=CREAM,
         controls=[
             ft.SafeArea(
                 content=ft.Container(
                     expand=True,
-                    alignment=ft.Alignment.CENTER,
+                    padding=24,
                     content=ft.Column(
-                        width=400,
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                         controls=[
+                            ft.Container(height=28),
+
+                            ft.Container(
+                                width=96,
+                                height=96,
+                                border_radius=48,
+                                bgcolor="#E0EAD7",
+                                alignment=ft.Alignment.CENTER,
+                                content=ft.Text("🥬", size=46),
+                            ),
+
                             ft.Text(
                                 "PantrySaver",
                                 size=34,
                                 weight=ft.FontWeight.BOLD,
+                                color=TEXT_DARK,
                             ),
+
                             ft.Text(
-                                "Track food purchases and household waste",
+                                "Save food. Share smarter. Waste less.",
                                 size=14,
-                                color=ft.Colors.GREY_700,
+                                color=TEXT_MUTED,
+                                text_align=ft.TextAlign.CENTER,
                             ),
-                            ft.Divider(height=30, color=ft.Colors.TRANSPARENT),
-                            email_field,
-                            password_field,
-                            ft.Row(
-                                alignment=ft.MainAxisAlignment.CENTER,
-                                controls=[
-                                    login_button,
-                                    signup_button,
-                                ],
+
+                            ft.Container(height=18),
+
+                            ft.Container(
+                                width=360,
+                                padding=22,
+                                border_radius=24,
+                                bgcolor=CARD,
+                                content=ft.Column(
+                                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                                    spacing=14,
+                                    controls=[
+                                        ft.Text(
+                                            "Welcome back",
+                                            size=20,
+                                            weight=ft.FontWeight.BOLD,
+                                            color=TEXT_DARK,
+                                        ),
+                                        email_field,
+                                        password_field,
+                                        message,
+                                        login_button,
+                                        signup_button,
+                                    ],
+                                ),
                             ),
-                            message,
+
+                            ft.Container(height=14),
+
+                            ft.Text(
+                                "Your household food tracker",
+                                size=12,
+                                color=TEXT_MUTED,
+                            ),
                         ],
                     ),
                 )
