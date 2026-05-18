@@ -22,6 +22,6 @@ def run_algorithm(how_frequent: int = 60):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--freq", type=int, default=None)
+    parser.add_argument("--freq", type=int, default=60)
     args = parser.parse_args()
     run_algorithm(args.freq)
