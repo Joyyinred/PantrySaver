@@ -3,18 +3,10 @@ from datetime import datetime, timedelta, timezone
 from db import supabase
 
 
-def normalize(text: str) -> str:
-    return text.strip().lower()
-
-
 def add_mock_data_to_supabase():
-    
+
     print()
     print("connecting...")
-
-    household_id = str(uuid.uuid4())
-    john_id = str(uuid.uuid4())
-    jane_id = str(uuid.uuid4())
 
     now = datetime.now(timezone.utc)
     recent_date = (now - timedelta(days=2)).isoformat()
@@ -22,37 +14,43 @@ def add_mock_data_to_supabase():
     super_old_date = (now - timedelta(days=100)).isoformat()
 
     categories = [
-        {"id": str(uuid.uuid4()), "name": "fruit"},
-        {"id": str(uuid.uuid4()), "name": "fruit & vegetables"},
-        {"id": str(uuid.uuid4()), "name": "dairy"},
-        {"id": str(uuid.uuid4()), "name": "vegetables"},
-        {"id": str(uuid.uuid4()), "name": "bakery"},
+        {"name": "fruit"},
+        {"name": "fruit & vegetables"},
+        {"name": "dairy"},
+        {"name": "vegetables"},
+        {"name": "bakery"},
     ]
 
-    supabase.table("categories").insert(categories).execute()
+    categories_res = supabase.table("categories").insert(categories).execute().data
 
     mapped_categories = {}
 
-    for category in categories:
-        category_name = category["name"]
-        category_id = category["id"]
-        mapped_categories[category_name] = category_id
+    for category in categories_res:
+        mapped_categories[category["name"]] = category["id"]
 
     supabase.table("households").insert({
-        "id": household_id,
         "name": "doe household",
         "location": "växjö, sweden",
         "modified": True
     }).execute()
 
+    household_res = (
+        supabase.table("households")
+        .select("*")
+        .eq("name", "doe household")
+        .single()
+        .execute()
+        .data
+    )
+
+    household_id = household_res["id"]
+
     users = [
         {
-            "id": john_id,
             "email": "john.doe@gmail.com",
             "household_id": household_id
         },
         {
-            "id": jane_id,
             "email": "jane.doe@gmail.com",
             "household_id": household_id
         }
@@ -60,9 +58,29 @@ def add_mock_data_to_supabase():
 
     supabase.table("users").insert(users).execute()
 
+    john_user = (
+        supabase.table("users")
+        .select("*")
+        .eq("email", "john.doe@gmail.com")
+        .single()
+        .execute()
+        .data
+    )
+
+    jane_user = (
+        supabase.table("users")
+        .select("*")
+        .eq("email", "jane.doe@gmail.com")
+        .single()
+        .execute()
+        .data
+    )
+
+    john_id = john_user["id"]
+    jane_id = jane_user["id"]
+
     purchased_items = [
         {
-            "id": str(uuid.uuid4()),
             "user_id": john_id,
             "household_id": household_id,
             "item_name": "bananas",
@@ -70,7 +88,6 @@ def add_mock_data_to_supabase():
             "logged_at": recent_date
         },
         {
-            "id": str(uuid.uuid4()),
             "user_id": jane_id,
             "household_id": household_id,
             "item_name": "milk",
@@ -78,7 +95,6 @@ def add_mock_data_to_supabase():
             "logged_at": old_date
         },
         {
-            "id": str(uuid.uuid4()),
             "user_id": john_id,
             "household_id": household_id,
             "item_name": "cheese",
@@ -86,7 +102,6 @@ def add_mock_data_to_supabase():
             "logged_at": recent_date
         },
         {
-            "id": str(uuid.uuid4()),
             "user_id": jane_id,
             "household_id": household_id,
             "item_name": "spinach",
@@ -94,7 +109,6 @@ def add_mock_data_to_supabase():
             "logged_at": super_old_date
         },
         {
-            "id": str(uuid.uuid4()),
             "user_id": john_id,
             "household_id": household_id,
             "item_name": "apples",
@@ -102,7 +116,6 @@ def add_mock_data_to_supabase():
             "logged_at": recent_date
         },
         {
-            "id": str(uuid.uuid4()),
             "user_id": jane_id,
             "household_id": household_id,
             "item_name": "yogurt",
@@ -110,7 +123,6 @@ def add_mock_data_to_supabase():
             "logged_at": recent_date
         },
         {
-            "id": str(uuid.uuid4()),
             "user_id": john_id,
             "household_id": household_id,
             "item_name": "tomatoes",
@@ -118,7 +130,6 @@ def add_mock_data_to_supabase():
             "logged_at": old_date
         },
         {
-            "id": str(uuid.uuid4()),
             "user_id": jane_id,
             "household_id": household_id,
             "item_name": "carrots",
@@ -126,7 +137,6 @@ def add_mock_data_to_supabase():
             "logged_at": recent_date
         },
         {
-            "id": str(uuid.uuid4()),
             "user_id": john_id,
             "household_id": household_id,
             "item_name": "bread",
@@ -134,7 +144,6 @@ def add_mock_data_to_supabase():
             "logged_at": recent_date
         },
         {
-            "id": str(uuid.uuid4()),
             "user_id": jane_id,
             "household_id": household_id,
             "item_name": "eggs",
@@ -147,7 +156,6 @@ def add_mock_data_to_supabase():
 
     discarded_items = [
         {
-            "id": str(uuid.uuid4()),
             "user_id": john_id,
             "household_id": household_id,
             "item_name": "bananas",
@@ -155,7 +163,6 @@ def add_mock_data_to_supabase():
             "logged_at": recent_date
         },
         {
-            "id": str(uuid.uuid4()),
             "user_id": jane_id,
             "household_id": household_id,
             "item_name": "bananas",
@@ -163,7 +170,6 @@ def add_mock_data_to_supabase():
             "logged_at": recent_date
         },
         {
-            "id": str(uuid.uuid4()),
             "user_id": john_id,
             "household_id": household_id,
             "item_name": "milk",
@@ -171,7 +177,6 @@ def add_mock_data_to_supabase():
             "logged_at": old_date
         },
         {
-            "id": str(uuid.uuid4()),
             "user_id": jane_id,
             "household_id": household_id,
             "item_name": "milk",
@@ -179,7 +184,6 @@ def add_mock_data_to_supabase():
             "logged_at": old_date
         },
         {
-            "id": str(uuid.uuid4()),
             "user_id": jane_id,
             "household_id": household_id,
             "item_name": "spinach",
@@ -187,7 +191,6 @@ def add_mock_data_to_supabase():
             "logged_at": super_old_date
         },
         {
-            "id": str(uuid.uuid4()),
             "user_id": john_id,
             "household_id": household_id,
             "item_name": "bread",
