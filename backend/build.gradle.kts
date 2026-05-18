@@ -25,6 +25,11 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 	implementation("me.paulschwarz:spring-dotenv:4.0.0")
+
+
+	implementation("org.springframework.boot:spring-boot-starter-security")
+	implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server") // add OAuth2 Resource Server
+
 }
 
 tasks.withType<Test> {
