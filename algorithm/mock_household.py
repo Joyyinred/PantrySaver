@@ -195,6 +195,20 @@ def add_mock_data_to_supabase():
             "item_name": "bread",
             "quantity_discarded": 1.0,
             "logged_at": recent_date
+        },
+        {
+            "user_id": john_id,
+            "household_id": household_id,
+            "item_name": "lettuce",
+            "quantity_discarded": 1.0,
+            "logged_at": recent_date
+        },
+        {
+            "user_id": jane_id,
+            "household_id": household_id,
+            "item_name": "lettuce",
+            "quantity_discarded": 1.0,
+            "logged_at": recent_date
         }
     ]
 
@@ -212,6 +226,7 @@ def add_mock_data_to_supabase():
         {"item_name": "carrots", "category_id": mapped_categories["vegetables"]},
         {"item_name": "bread", "category_id": mapped_categories["bakery"]},
         {"item_name": "apples", "category_id": mapped_categories["fruit"]},
+        {"item_name": "lettuce", "category_id": mapped_categories["vegetables"]},
     ]
 
     supabase.table("item_categories").insert(item_categories).execute()
