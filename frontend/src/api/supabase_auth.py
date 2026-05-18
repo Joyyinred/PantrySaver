@@ -1,5 +1,12 @@
 import requests
 
+# talks directly to Supabase Auth.
+
+#It handles: signup login
+
+#It does not talk to Spring Boot backend.
+
+#It sends email/password to Supabase and gets back tokens.
 
 SUPABASE_URL = "https://mhavpdfogtoanjdaluox.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_WSh3sw_jmKTqJdd7SYf__Q_iSj15XoA"
