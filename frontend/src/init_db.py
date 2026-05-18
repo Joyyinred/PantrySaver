@@ -49,6 +49,21 @@ def init_database():
         )
     ''')
 
+    c.execute('''
+    create table categories (
+        id text primary key,
+        name text unique not null
+        )
+    ''')
+
+    c.execute('''
+    create table item_categories (
+        item_name text not null,
+        category_id text not null references categories(id) on delete cascade,
+        primary key (item_name, category_id)
+        )
+    ''')
+
     # Indexes
     c.execute('create index idx_users_household on user(household_id)')
     c.execute('create index idx_purchased_household on purchased_items(household_id)')
