@@ -22,6 +22,8 @@ def init_database():
     create table users (
         id text primary key,
         email text unique not null,
+        first_name text not null,
+        last_name text,
         household_id text not null references households(id) on delete cascade,
         created_at text default current_timestamp
         )
