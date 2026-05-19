@@ -14,6 +14,7 @@ def init_database():
         location text,
         modified boolean default 1,
         created_at text default current_timestamp
+        join_code text unique
         )
     ''')
 
