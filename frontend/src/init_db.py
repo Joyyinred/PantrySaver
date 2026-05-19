@@ -64,7 +64,7 @@ def init_database():
     ''')
 
     # Indexes
-    c.execute('create index idx_users_household on user(household_id)')
+    c.execute('create index idx_users_household on users(household_id)')
     c.execute('create index idx_purchased_household on purchased_items(household_id)')
     c.execute('create index idx_discarded_household on discarded_items(household_id)')
 
