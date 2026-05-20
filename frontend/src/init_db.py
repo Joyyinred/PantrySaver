@@ -66,6 +66,27 @@ def init_database():
         )
     ''')
 
+    c.execute('''
+    create table recommendation_templates (
+        id integer primary key autoincrement,
+        type integer not null,
+        template_text text unique not null
+        )
+    ''')
+
+    c.execute('''
+    create table recommendations (
+        id text primary key,
+        user_id text not null references users(id) on delete cascade,
+        template_id integer not null references recommendation_templates(id),
+        item_name text not null,
+        feedback integer default NULL,
+        is_active boolean default 1,
+        created_at text default current_timestamp,
+        responded_at text
+        )
+    ''')
+
     # Indexes
     c.execute('create index idx_users_household on users(household_id)')
     c.execute('create index idx_purchased_household on purchased_items(household_id)')
