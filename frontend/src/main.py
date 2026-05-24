@@ -9,6 +9,8 @@ from pages.p2_statistics import StatisticsPage
 from pages.p3_recommendations import RecommendationPage
 from pages.p4_account import AccountPage
 
+from api.supabase_db import get_user_profile, get_household
+
 if not os.path.exists('database.db'):
     init_database()
 
@@ -62,9 +64,36 @@ def main(page: ft.Page):
 
 
     def on_login_click(auth_result):
-        save_auth_session(auth_result)
-        show_main_app()
+        nonlocal account_content
 
+        save_auth_session(auth_result)
+
+        user = auth_result.get("user")
+        access_token = auth_result.get("access_token")
+
+        user_profile = get_user_profile(
+            access_token=access_token,
+            user_id=user.get("id"),
+        )
+
+        household = None
+
+        if user_profile and user_profile.get("household_id"):
+            household = get_household(
+                access_token=access_token,
+                household_id=user_profile.get("household_id"),
+            )
+
+        session["user_profile"] = user_profile
+        session["household"] = household
+
+        account_content = AccountPage(
+            on_logout_click=on_logout_click,
+            user_profile=session["user_profile"],
+            household=session["household"],
+        )
+
+        show_main_app()
 
     def on_signup_click(auth_result):
         save_auth_session(auth_result)
@@ -96,7 +125,7 @@ def main(page: ft.Page):
     
     def on_logout_click():
         nonlocal account_content
-        
+
         session["access_token"] = None
         session["refresh_token"] = None
         session["user"] = None

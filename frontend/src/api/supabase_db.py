@@ -57,3 +57,41 @@ def create_user_profile(access_token, user_id, email, household_id, first_name, 
         raise Exception(response.text)
 
     return response.json()[0]
+
+# fetch login user
+def get_user_profile(access_token, user_id):
+    url = f"{SUPABASE_URL}/rest/v1/users"
+
+    response = requests.get(
+        f"{url}?id=eq.{user_id}&select=*",
+        headers=auth_headers(access_token),
+    )
+
+    if response.status_code != 200:
+        raise Exception(response.text)
+
+    data = response.json()
+
+    if not data:
+        return None
+
+    return data[0]
+
+
+def get_household(access_token, household_id):
+    url = f"{SUPABASE_URL}/rest/v1/households"
+
+    response = requests.get(
+        f"{url}?id=eq.{household_id}&select=*",
+        headers=auth_headers(access_token),
+    )
+
+    if response.status_code != 200:
+        raise Exception(response.text)
+
+    data = response.json()
+
+    if not data:
+        return None
+
+    return data[0]
