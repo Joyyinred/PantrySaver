@@ -43,7 +43,17 @@ def LoginPage(on_login_click):
             on_login_click(result)
 
         except Exception as ex:
-            message_text.value = "Email or password is not correct."
+            error_text = str(ex).lower()
+
+            if is_signup[0]:
+                if "user_already_exists" in error_text or "user already registered" in error_text:
+                    message_text.value = "User already exists."
+                elif "weak_password" in error_text:
+                    message_text.value = "Password should be at least 6 characters."
+                else:
+                    message_text.value = "Signup failed. Please try again."
+            else:
+                message_text.value = "Email or password is not correct."
 
             view.update()
 
