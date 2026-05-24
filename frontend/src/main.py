@@ -3,6 +3,7 @@ from init_db import init_database
 import os
 
 from pages.p0_login import LoginPage
+from pages.p00_signup_setup import SignupSetupPage
 from pages.p1_item_entry import LogFoodPage
 from pages.p2_statistics import StatisticsPage
 from pages.p3_recommendations import RecommendationPage
@@ -18,6 +19,9 @@ def main(page: ft.Page):
         "access_token": None,
         "refresh_token": None,
         "user": None,
+        "user_profile": None,
+        "household": None,
+
     }
     
     page.title = "Pantry Saver"
@@ -44,15 +48,43 @@ def main(page: ft.Page):
     )
     
     # after login succedds call this function, auth_result is the response from Supabase
-    def on_login_click(auth_result):
+    def save_auth_session(auth_result):
         session["access_token"] = auth_result.get("access_token")
         session["refresh_token"] = auth_result.get("refresh_token")
         session["user"] = auth_result.get("user")
-        
+
+
+    def show_main_app():
         nav_bar.selected_index = 0
         app_tab_content_area.content = log_food_content
         main_container.content = log_food_screen
         page.update()
+
+
+    def on_login_click(auth_result):
+        save_auth_session(auth_result)
+        show_main_app()
+
+
+    def on_signup_click(auth_result):
+        save_auth_session(auth_result)
+
+        setup_form = SignupSetupPage(
+            auth_result=auth_result,
+            on_setup_complete=on_setup_complete,
+        )
+
+        main_container.content = setup_form
+        page.update()
+
+
+    def on_setup_complete(auth_result, user_profile, household):
+        save_auth_session(auth_result)
+
+        session["user_profile"] = user_profile
+        session["household"] = household
+
+        show_main_app()
     
     
     def on_logout_click():
@@ -65,7 +97,10 @@ def main(page: ft.Page):
         main_container.content = login_form
         page.update()
 
-    login_form, email_field, password_field = LoginPage(on_login_click=on_login_click)
+    login_form, email_field, password_field = LoginPage(
+        on_login_click=on_login_click,
+        on_signup_click=on_signup_click,)
+    
     account_content = AccountPage(on_logout_click=on_logout_click)
 
     def on_tab_change(e):
