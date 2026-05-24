@@ -1,5 +1,9 @@
 import flet as ft
+import re
 from api.supabase_auth import login, signup # connets to supabase
+
+def is_valid_email(email):
+    return re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email) is not None
 
 def LoginPage(on_login_click):
 
@@ -19,9 +23,9 @@ def LoginPage(on_login_click):
         email = (email_input.value or "").strip()
         password = password_input.value or ""
         confirm_password = confirm_password_input.value or ""
-
-        if not email or not password:
-            message_text.value = "Please enter email and password."
+        
+        if not is_valid_email(email):
+            message_text.value = "Please enter a valid email address."
             view.update()
             return
 
@@ -39,10 +43,7 @@ def LoginPage(on_login_click):
             on_login_click(result)
 
         except Exception as ex:
-            if is_signup[0]:
-                message_text.value = f"Signup failed. {ex}"
-            else:
-                message_text.value = f"Login failed. {ex}"
+            message_text.value = "Email or password is not correct."
 
             view.update()
 
