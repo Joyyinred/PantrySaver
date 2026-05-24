@@ -2,7 +2,24 @@ import asyncio
 import flet as ft
 from components.reuseable_ui_elements import show_big_round_button, show_header
 
-def AccountPage(on_logout_click):
+def AccountPage(on_logout_click, user_profile=None, household=None):
+
+    first_name = ""
+    last_name = ""
+
+    if user_profile:
+        first_name = user_profile.get("first_name") or ""
+        last_name = user_profile.get("last_name") or ""
+
+    full_name = f"{first_name} {last_name}".strip()
+
+    if not full_name:
+        full_name = "Unknown user"
+
+    household_name = "No household"
+
+    if household:
+        household_name = household.get("name") or "No household"
 
     header = show_header(
         title="My Account",
