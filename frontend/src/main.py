@@ -1,100 +1,97 @@
 import flet as ft
+from init_db import init_database
+import os
 
-from state.app_state import AppState
-from views.login_view import login_view
-from views.home_view import home_view
-from views.household_view import household_view
+from pages.p0_login import LoginPage
+from pages.p1_item_entry import LogFoodPage
+from pages.p2_statistics import StatisticsPage
+from pages.p3_recommendations import RecommendationPage
+from pages.p4_account import AccountPage
 
+if not os.path.exists('database.db'):
+    init_database()
 
 def main(page: ft.Page):
-    page.title = "PantrySaver"
-
-    # Mobile-like window size
-    page.window_width = 410
-    page.window_height = 780
-    page.window_resizable = False
-
-    page.padding = 0
-    page.bgcolor = "#F7F5EF"
-
+    page.title = "Pantry Saver"
     page.theme = ft.Theme(
-        color_scheme_seed="#4F8A5B",
-        font_family="Arial",
+        color_scheme=ft.ColorScheme(
+            primary=ft.Colors.BLUE_800,
+            secondary=ft.Colors.BLUE_600,
+        ),
+        navigation_bar_theme=ft.NavigationBarTheme(
+            indicator_color=ft.Colors.BLUE_100,
+            label_behavior=ft.NavigationBarLabelBehavior.ALWAYS_SHOW,
+        )
     )
 
-    state = AppState()
+    log_food_content = LogFoodPage()
+    statistics_content = StatisticsPage()
+    recommendations_content = RecommendationPage()
 
-    def go_home():
-        page.go("/home")
+    app_tab_content_area = ft.Container(
+        content=log_food_content, 
+        padding=20, 
+        expand=True, 
+        alignment=ft.Alignment.TOP_CENTER
+    )
 
-    def go_household():
-        page.go("/household")
-
-    def logout():
-        state.access_token = None
-        state.refresh_token = None
-        state.current_user = None
-        state.current_household = None
-        state.household_members = []
-        page.go("/login")
-
-    def route_change(route):
-        page.views.clear()
-
-        if page.route == "/login":
-            page.views.append(
-                login_view(
-                    page=page,
-                    state=state,
-                    go_home=go_home,
-                )
-            )
-
-        elif page.route == "/home":
-            if not state.access_token:
-                page.go("/login")
-                return
-
-            page.views.append(
-                home_view(
-                    page=page,
-                    state=state,
-                    go_household=go_household,
-                    logout=logout,
-                )
-            )
-
-        elif page.route == "/household":
-            if not state.access_token:
-                page.go("/login")
-                return
-
-            page.views.append(
-                household_view(
-                    page=page,
-                    state=state,
-                    go_home=go_home,
-                )
-            )
-
-        else:
-            page.go("/login")
-            return
-
+    def on_login_click():
+        nav_bar.selected_index = 0
+        app_tab_content_area.content = log_food_content
+        main_container.content = log_food_screen
         page.update()
 
-    def view_pop(view):
-        page.views.pop()
+    def on_logout_click():
+        email_field.value = ""
+        password_field.value = ""
+        main_container.content = login_form
+        page.update()
 
-        if page.views:
-            page.go(page.views[-1].route)
-        else:
-            page.go("/login")
+    login_form, email_field, password_field = LoginPage(on_login_click=on_login_click)
+    account_content = AccountPage(on_logout_click=on_logout_click)
 
-    page.on_route_change = route_change
-    page.on_view_pop = view_pop
+    def on_tab_change(e):
+        tab_routing_map = {
+            0: log_food_content,
+            1: statistics_content,
+            2: recommendations_content,
+            3: account_content
+        }
+        app_tab_content_area.content = tab_routing_map.get(e.control.selected_index, log_food_content)
+        page.update()
 
-    page.go("/login")
+    nav_bar = ft.NavigationBar(
+        destinations=[
+            ft.NavigationBarDestination(icon=ft.Icons.ADD_BOX, label="Log Food"),
+            ft.NavigationBarDestination(icon=ft.Icons.BAR_CHART, label="Statistics"),
+            ft.NavigationBarDestination(icon=ft.Icons.LIGHTBULB, label="Recommendations"),
+            ft.NavigationBarDestination(icon=ft.Icons.PERSON, label="Account"),
+        ],
+        selected_index=0,
+        on_change=on_tab_change
+    )
 
+    log_food_screen = ft.Column(
+        [
+            app_tab_content_area,  
+            nav_bar
+        ],
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        spacing=0,
+        expand=True
+    )
+
+    main_container = ft.Container(
+        content=login_form,
+        alignment=ft.Alignment.CENTER,
+        expand=True
+    )
+
+    page.add(
+        ft.SafeArea(
+            expand=True,
+            content=main_container,
+        )
+    )
 
 ft.run(main)
