@@ -74,7 +74,8 @@ def SignupSetupPage(auth_result, on_setup_complete):
         setup_mode["value"] = "create"
         view.controls = get_create_household_controls()
         view.update()
-
+    
+    # TODO
     def show_join_household(e=None):
         message_text.value = "Join household will be added later."
         view.controls = get_choice_controls()
