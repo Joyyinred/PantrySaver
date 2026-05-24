@@ -12,6 +12,14 @@ if not os.path.exists('database.db'):
     init_database()
 
 def main(page: ft.Page):
+    
+    # stores the logged-in Supabase user information while the app is open
+    session = {
+        "access_token": None,
+        "refresh_token": None,
+        "user": None,
+    }
+    
     page.title = "Pantry Saver"
     page.theme = ft.Theme(
         color_scheme=ft.ColorScheme(
@@ -34,14 +42,24 @@ def main(page: ft.Page):
         expand=True, 
         alignment=ft.Alignment.TOP_CENTER
     )
-
-    def on_login_click():
+    
+    # after login succedds call this function, auth_result is the response from Supabase
+    def on_login_click(auth_result):
+        session["access_token"] = auth_result.get("access_token")
+        session["refresh_token"] = auth_result.get("refresh_token")
+        session["user"] = auth_result.get("user")
+        
         nav_bar.selected_index = 0
         app_tab_content_area.content = log_food_content
         main_container.content = log_food_screen
         page.update()
-
+    
+    
     def on_logout_click():
+        session["access_token"] = None
+        session["refresh_token"] = None
+        session["user"] = None
+        
         email_field.value = ""
         password_field.value = ""
         main_container.content = login_form

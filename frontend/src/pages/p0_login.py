@@ -89,6 +89,7 @@ def LoginPage(on_login_click):
             confirm_password_input,
             login_button,
             signup_container,
+            message_text, # add error message
         ],
 
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
