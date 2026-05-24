@@ -79,18 +79,30 @@ def main(page: ft.Page):
 
 
     def on_setup_complete(auth_result, user_profile, household):
+        nonlocal account_content
+
         save_auth_session(auth_result)
 
         session["user_profile"] = user_profile
         session["household"] = household
 
+        account_content = AccountPage(
+            on_logout_click=on_logout_click,
+            user_profile=session["user_profile"],
+            household=session["household"],
+        )
+
         show_main_app()
     
-    
     def on_logout_click():
+        nonlocal account_content
+        
         session["access_token"] = None
         session["refresh_token"] = None
         session["user"] = None
+        session["user_profile"] = None
+        session["household"] = None
+        account_content = None
         
         email_field.value = ""
         password_field.value = ""
@@ -101,7 +113,7 @@ def main(page: ft.Page):
         on_login_click=on_login_click,
         on_signup_click=on_signup_click,)
     
-    account_content = AccountPage(on_logout_click=on_logout_click)
+    account_content = None
 
     def on_tab_change(e):
         tab_routing_map = {

@@ -55,8 +55,8 @@ def AccountPage(on_logout_click, user_profile=None, household=None):
                 [
                     header,
                     ft.Icon(ft.Icons.ACCOUNT_CIRCLE, size=80, color=ft.Colors.BLUE_800),
-                    ft.Text("John Doe", weight=ft.FontWeight.BOLD, size=20),
-                    ft.Text("DOE HOUSEHOLD", size=14, color=ft.Colors.GREY_600),
+                    ft.Text(full_name, weight=ft.FontWeight.BOLD, size=20),
+                    ft.Text(household_name.upper(), size=14, color=ft.Colors.GREY_600),
                     code_display, 
                 ],
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
