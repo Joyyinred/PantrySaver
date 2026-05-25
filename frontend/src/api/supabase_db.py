@@ -2,6 +2,8 @@
 # manage database functions
 
 
+import re
+
 import requests
 
 from api.supabase_auth import SUPABASE_URL, SUPABASE_ANON_KEY
@@ -95,3 +97,47 @@ def get_household(access_token, household_id):
         return None
 
     return data[0]
+
+def log_purchased_items(access_token, user_id, household_id, item_name, quantity):
+
+    url = f'{SUPABASE_URL}/rest/v1/purchased_items'
+    body = {
+        'user_id': user_id,
+        'household_id': household_id,
+        'item_name': item_name,
+        'quantity': quantity
+    }
+    response = requests.post(url, headers=auth_headers(access_token), json=body)
+
+    if response.status_code not in [200, 201]:
+
+        raise Exception(response.text)
+
+    return response.json()
+
+def log_discarded_item(access_token, user_id, household_id, item_name, quantity_discarded):
+
+    url = f'{SUPABASE_URL}/rest/v1/discarded_items'
+    body = {
+        'user_id': user_id,
+        'household_id': household_id,
+        'item_name': item_name,
+        'quantity_discarded': quantity_discarded
+    }
+    response = requests.post(url, headers=auth_headers(access_token), json=body)
+
+    if response.status_code not in [200, 201]:
+
+        raise Exception(response.text)
+
+    return response.json()
+
+def mark_household_modified(access_token, household_id):
+
+    url = f'{SUPABASE_URL}/rest/v1/households?id=eq.{household_id}'
+    body = {'modified': True}
+    response = requests.patch(url, headers=auth_headers(access_token), json=body)
+
+    if response.status_code not in [200, 204]:
+
+        raise Exception(response.text)
