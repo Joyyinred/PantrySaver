@@ -87,5 +87,5 @@ public class HouseholdController {
     Map<String, String> response = new HashMap<>();
     response.put("join_code", joinCode);
     return ResponseEntity.ok(response);
-     + }
+    }
 }
