@@ -95,7 +95,7 @@ def join_household(access_token: str, household_id: str) -> dict:
 
     return response.json()
 
-def generate_join_code(access_token:str) -> str:
+def generate_join_code(access_token: str) -> str:
     response = requests.post(
         f"{BACKEND_URL}/households/generate-join-code",
         headers=auth_headers(access_token),
