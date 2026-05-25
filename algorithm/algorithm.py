@@ -137,6 +137,8 @@ def calculate_ratios(household_id, purchased, discarded):
             continue
 
         ratio = discarded_quant / purchased_quant
+        if ratio > 1:
+            ratio = 1
         calculated_ratios[name] = ratio
 
         supabase.table("ratios").upsert(
