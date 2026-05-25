@@ -1,11 +1,13 @@
 import asyncio
 import flet as ft
 from components.reuseable_ui_elements import show_big_round_button, show_header
+from api.backend_api import generate_join_code
 
-def AccountPage(on_logout_click, user_profile=None, household=None):
+def AccountPage(on_logout_click, user_profile=None, household=None, access_token=None):
 
     first_name = ""
     last_name = ""
+    
 
     if user_profile:
         first_name = user_profile.get("first_name") or ""
@@ -35,13 +37,22 @@ def AccountPage(on_logout_click, user_profile=None, household=None):
         animate_opacity=1000
     )
 
-    # TODO - should generate a one time code for new user and add to database of household. The new user can use that code to join household, that should erase the code from the database.
     async def on_invite_click(e):
-        code_display.opacity = 1
-        code_display.update()
-        await asyncio.sleep(10)
-        code_display.opacity = 0
-        code_display.update()
+        print(access_token)
+        try:
+            code = generate_join_code(access_token)
+            code_display.value = code
+            code_display.opacity = 1
+            code_display.update()
+            await asyncio.sleep(10)
+            code_display.opacity = 0
+            code_display.update()
+        except Exception as ex:
+            print("Invite error:", ex)
+            if hasattr(ex, 'response'):
+                print("Response content:", ex.response.text) 
+            code_display.opacity = 1
+            code_display.update()
 
     logout_btn = show_big_round_button(ft.Icons.LOGOUT, ft.Colors.RED_700)
     logout_btn.on_click = on_logout_click

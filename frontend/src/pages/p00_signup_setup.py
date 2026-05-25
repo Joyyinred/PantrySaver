@@ -1,6 +1,7 @@
 import flet as ft
 
 from api.supabase_db import create_household, create_user_profile
+from api.backend_api import join_household_by_code
 
 
 def SignupSetupPage(auth_result, on_setup_complete):
@@ -12,6 +13,8 @@ def SignupSetupPage(auth_result, on_setup_complete):
 
     household_name_input = ft.TextField(label="Household Name", width=300)
     location_input = ft.TextField(label="Location", width=300)
+
+    join_code_input = ft.TextField(label="Join Code", width=300)
 
     message_text = ft.Text(
         "",
@@ -75,11 +78,49 @@ def SignupSetupPage(auth_result, on_setup_complete):
         view.controls = get_create_household_controls()
         view.update()
     
-    # TODO
     def show_join_household(e=None):
-        message_text.value = "Join household will be added later."
-        view.controls = get_choice_controls()
+        message_text.value = ""
+        setup_mode["value"] = "join"
+        view.controls = get_join_household_controls()
         view.update()
+
+    def submit_join_household(e):
+        message_text.value = ""
+        join_code = (join_code_input.value or "").strip()
+        if not join_code:
+            message_text.value = "Please enter a code to join ..."
+            view.controls = get_join_household_controls()
+            view.update()
+            return
+        try:
+            household = join_household_by_code(access_token, join_code)
+            save_user_with_household(household)
+        except Exception as ex:
+            message_text.value = f"Join failed. {ex}"
+            view.controls = get_join_household_controls()
+            view.update()
+
+    def get_join_household_controls():
+        return [
+            *title_controls(),
+            join_code_input,
+            ft.FilledButton(
+                content=ft.Text(
+                    "Join Household",
+                    color=ft.Colors.WHITE,
+                    weight=ft.FontWeight.BOLD,
+                ),
+                width=300,
+                height=50,
+                style=ft.ButtonStyle(bgcolor=ft.Colors.BLUE_800),
+                on_click=submit_join_household,
+            ),
+            ft.TextButton(
+                "Back",
+                on_click=show_choice,
+            ),
+            message_text,
+        ]
 
     def submit_create_household(e):
         message_text.value = ""

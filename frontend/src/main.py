@@ -91,6 +91,7 @@ def main(page: ft.Page):
             on_logout_click=on_logout_click,
             user_profile=session["user_profile"],
             household=session["household"],
+            access_token=session["access_token"]
         )
 
         show_main_app()
@@ -114,11 +115,13 @@ def main(page: ft.Page):
 
         session["user_profile"] = user_profile
         session["household"] = household
+        session["access_token"] = access_token
 
         account_content = AccountPage(
             on_logout_click=on_logout_click,
             user_profile=session["user_profile"],
             household=session["household"],
+            access_token=session["access_token"]
         )
 
         show_main_app()

@@ -130,4 +130,16 @@ public class HouseholdService {
         }
         return sb.toString();
     }
+
+    public Household joinByCode(UUID userId, String joinCode) {
+        Household household = householdRepository.findByJoinCode(joinCode)
+            .orElseThrow(() -> new RuntimeException("Invalid or expired join code"));
+        User user = getUserOrThrow(userId);
+        user.setHousehold(household);
+        userRepository.save(user);
+        household.setJoinCode(null);
+        householdRepository.save(household);
+
+        return household;
+    }
 }

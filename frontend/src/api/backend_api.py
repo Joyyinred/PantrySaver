@@ -96,13 +96,25 @@ def join_household(access_token: str, household_id: str) -> dict:
     return response.json()
 
 def generate_join_code(access_token: str) -> str:
+
+    url = f"{BACKEND_URL}/households/generate_join_code"
     response = requests.post(
-        f"{BACKEND_URL}/households/generate-join-code",
+        url,
         headers=auth_headers(access_token),
     )
     if response.status_code != 200:
         raise Exception(response.text)
     return response.json().get("join_code")
+
+def join_household_by_code(access_token: str, join_code: str) -> dict:
+    response = requests.post(
+        f"{BACKEND_URL}/households/join_by_code",
+        headers=auth_headers(access_token),
+        json={"join_code": join_code},
+    )
+    if response.status_code != 200:
+        raise Exception(response.text)
+    return response.json()
     
 
 def update_household(access_token: str, name: str, location: str | None = None) -> dict:

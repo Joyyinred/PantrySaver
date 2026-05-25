@@ -80,12 +80,20 @@ public class HouseholdController {
         return householdService.leaveCurrentHousehold(userId);
     }
 
-    @PostMapping("/households/generate-join-code")
+    @PostMapping("/generate_join_code")
     public ResponseEntity<Map<String, String>> generateJoinCode(@AuthenticationPrincipal Jwt jwt) {
-    UUID userId = UUID.fromString(jwt.getSubject());
-    String joinCode = householdService.generateJoinCode(userId);
-    Map<String, String> response = new HashMap<>();
-    response.put("join_code", joinCode);
-    return ResponseEntity.ok(response);
+        UUID userId = UUID.fromString(jwt.getSubject());
+        String joinCode = householdService.generateJoinCode(userId);
+        Map<String, String> response = new HashMap<>();
+        response.put("join_code", joinCode);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/join_by_code")
+    public ResponseEntity<Household> joinByCode(@AuthenticationPrincipal Jwt jwt, @RequestBody Map<String, String> body) {
+        String joinCode = body.get("join_code");
+        UUID userId = UUID.fromString(jwt.getSubject());
+        Household household = householdService.joinByCode(userId, joinCode);
+        return ResponseEntity.ok(household);
     }
 }
