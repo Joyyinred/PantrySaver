@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import java.security.SecureRandom;
 
 @Service
 public class HouseholdService {
@@ -108,5 +109,25 @@ public class HouseholdService {
     private User getUserOrThrow(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found. Call /auth/sync first."));
+    }
+
+    public String generateJoinCode(UUID userId) {
+        User user = getUserOrThrow(userId);
+        Household household = user.getHousehold();
+        String joinCode = generateRandomCode(6);
+        household.setJoinCode(joinCode);
+        householdRepository.save(household);
+
+        return joinCode;
+    }
+
+    private String generateRandomCode(int length) {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 }

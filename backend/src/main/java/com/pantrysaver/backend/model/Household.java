@@ -18,6 +18,9 @@ public class Household {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "join_code")
+    private String joinCode;
+
     public UUID getId() {
         return id;
     }
@@ -48,5 +51,13 @@ public class Household {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public void setJoinCode(String joinCode) {
+    this.joinCode = joinCode;
+    }
+
+    public String getJoinCode() {
+        return joinCode;
     }
 }

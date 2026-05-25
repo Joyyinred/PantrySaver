@@ -6,10 +6,15 @@ import com.pantrysaver.backend.dto.UpdateHouseholdRequest;
 import com.pantrysaver.backend.model.Household;
 import com.pantrysaver.backend.model.User;
 import com.pantrysaver.backend.service.HouseholdService;
+import com.pantrysaver.backend.service.UserService;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.UUID;
 
@@ -74,4 +79,13 @@ public class HouseholdController {
 
         return householdService.leaveCurrentHousehold(userId);
     }
+
+    @PostMapping("/households/generate-join-code")
+    public ResponseEntity<Map<String, String>> generateJoinCode(@AuthenticationPrincipal Jwt jwt) {
+    UUID userId = UUID.fromString(jwt.getSubject());
+    String joinCode = householdService.generateJoinCode(userId);
+    Map<String, String> response = new HashMap<>();
+    response.put("join_code", joinCode);
+    return ResponseEntity.ok(response);
+     + }
 }
