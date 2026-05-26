@@ -5,6 +5,9 @@ from database import log_purchased_item_local, log_discarded_item_local
 
 def LogFoodPage(session, page: ft.Page):
 
+    file_picker = ft.FilePicker()
+    page.overlay.append(file_picker)
+
     header = show_header(
         title="Log Food",
         subtitle="Keep track of your pantry items and reduce waste!"
@@ -17,14 +20,13 @@ def LogFoodPage(session, page: ft.Page):
 
     # Opens camera on click
     by_pht_btn = show_big_round_button(ft.Icons.PHOTO_CAMERA, ft.Colors.BLUE_800)
-    by_pht_btn.on_click = lambda _: file_picker.pick_files(
-        allow_multiple=False,
-        file_type=ft.FilePickerType.IMAGE
-    )
+    by_pht_btn.on_click = lambda _: page.run_task(pick_file_task, file_type='image')
+
     # Opens selection for a file
     by_img_btn = show_big_round_button(ft.Icons.IMAGE, ft.Colors.BLUE_800)
-    by_img_btn.on_click = lambda _: file_picker.pick_files(
-        allow_multiple=False,
+    by_img_btn.on_click = lambda _: page.run_task(
+        pick_file_task,
+        file_type='custom',
         allowed_extensions=['pdf', 'png', 'jpg', 'jpeg']
     )
 
@@ -93,20 +95,20 @@ def LogFoodPage(session, page: ft.Page):
         expand=True
     )
 
-    def on_file_result(e: ft.FilePickerResultEvent):
+    async def pick_file_task(file_type='any', allowed_extensions=None):
 
-        if e.files:
+        result = await file_picker.pick_files(
+            allow_multiple=False,
+            file_type=file_type,
+            allowed_extensions=allowed_extensions
+        )
 
-            # Placeholder for OCR processing
-            page.snack_bar = ft.SnackBar(ft.Text(f'Processing {e.files[0].name}...'))
+        if result:
+
+            page.snack_bar = ft.SnackBar(ft.Text(f"File '{result[0].name}' selected. Starting OCR..."))
             page.snack_bar.open = True
-
-            # "Restart" the page by updating
             page.update()
-            print(f'File selected: {e.files[0].path}')
 
-    file_picker = ft.FilePicker(on_result=on_file_result)
-    page.overlay.append(file_picker)
 
     # Manual Logging Logic
     def handle_log(item_name, quantity, is_purchase):
@@ -119,12 +121,12 @@ def LogFoodPage(session, page: ft.Page):
 
             if is_purchase:
 
-                log_purchased_items(access_token, user_id, household_id, item_name, quantity)
+                log_purchased_items(access_token, household_id, item_name, quantity)
                 log_purchased_item_local(user_id, household_id, item_name, quantity)
 
             else:
 
-                log_discarded_item(access_token, user_id, household_id, item_name, quantity)
+                log_discarded_item(access_token, household_id, item_name, quantity)
                 log_discarded_item_local(user_id, household_id, item_name, quantity)
 
             mark_household_modified(access_token, household_id)

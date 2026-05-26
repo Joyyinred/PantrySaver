@@ -98,11 +98,10 @@ def get_household(access_token, household_id):
 
     return data[0]
 
-def log_purchased_items(access_token, user_id, household_id, item_name, quantity):
+def log_purchased_items(access_token, household_id, item_name, quantity):
 
     url = f'{SUPABASE_URL}/rest/v1/purchased_items'
     body = {
-        'user_id': user_id,
         'household_id': household_id,
         'item_name': item_name,
         'quantity': quantity
@@ -115,11 +114,10 @@ def log_purchased_items(access_token, user_id, household_id, item_name, quantity
 
     return response.json()
 
-def log_discarded_item(access_token, user_id, household_id, item_name, quantity_discarded):
+def log_discarded_item(access_token, household_id, item_name, quantity_discarded):
 
     url = f'{SUPABASE_URL}/rest/v1/discarded_items'
     body = {
-        'user_id': user_id,
         'household_id': household_id,
         'item_name': item_name,
         'quantity_discarded': quantity_discarded
