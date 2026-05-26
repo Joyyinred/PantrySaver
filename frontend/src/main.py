@@ -115,6 +115,7 @@ def main(page: ft.Page):
         nonlocal account_content
 
         save_auth_session(auth_result)
+        access_token = auth_result.get("access_token")
 
         # add token to user profile
         if user_profile:

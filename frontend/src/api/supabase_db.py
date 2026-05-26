@@ -165,7 +165,7 @@ def get_household_by_join_code(access_token, join_code):
         return None
     return data[0]
 
-def clear_join_code(access_token,join_code):
+def clear_join_code(access_token, household_id):
     url = f"{SUPABASE_URL}/rest/v1/households?id=eq.{household_id}"
     body = {"join_code": None}
     response = requests.patch(url, headers=auth_headers(access_token), json=body)
