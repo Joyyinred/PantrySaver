@@ -12,6 +12,7 @@ def init_database():
         id text primary key,
         name text not null,
         location text,
+        global_aggression real default 1.0,
         modified boolean default 1,
         created_at text default current_timestamp,
         join_code text unique
@@ -37,6 +38,15 @@ def init_database():
         item_name text not null,
         quantity real not null,
         logged_at text default current_timestamp
+        )
+    ''')
+
+    c.execute('''
+    create table item_intelligence (
+        household_id text not null references households(id) on delete cascade,
+        item_name text not null,
+        item_weight real default 1.0,
+        primary key (household_id, item_name)
         )
     ''')
 
@@ -77,9 +87,12 @@ def init_database():
     c.execute('''
     create table recommendations (
         id text primary key,
-        user_id text not null references users(id) on delete cascade,
-        template_id integer not null references recommendation_templates(id),
+        household_id text not null references households(id) on delete cascade,
+        template_id integer references recommendation_templates(id),
         item_name text not null,
+        type text not null,
+        subtitle text not null,
+        score real default 0.0,
         feedback integer default NULL,
         is_active boolean default 1,
         created_at text default current_timestamp,
