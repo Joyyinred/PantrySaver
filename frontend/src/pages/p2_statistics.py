@@ -1,10 +1,18 @@
 import flet as ft
 from components.reuseable_ui_elements import show_header, stat_row, show_big_round_button
+from db import supabase
 
 def StatisticsPage():
     header = show_header(
         title="Statistics",
         subtitle="Your household waste distribution ratios:"
+    )
+
+    response = (
+        supabase.table("ratios")
+        .select("*")
+        # .eq("household_id", household_id)
+        .execute()
     )
 
     stats_data = [
