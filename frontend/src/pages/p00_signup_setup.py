@@ -160,7 +160,7 @@ def SignupSetupPage(auth_result, on_setup_complete):
             
 
         except Exception as ex:
-            #message_text.value = f" household: {household}, AND THE ID IS {household_id}"
+           
             message_text.value = f"Failed to join household= {ex}"
             view.controls = get_join_household_controls()
             view.update()
