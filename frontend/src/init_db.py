@@ -13,7 +13,7 @@ def init_database():
         name text not null,
         location text,
         modified boolean default 1,
-        created_at text default current_timestamp
+        created_at text default current_timestamp,
         join_code text unique
         )
     ''')
