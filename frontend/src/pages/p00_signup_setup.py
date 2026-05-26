@@ -1,6 +1,11 @@
 import flet as ft
 
-from api.supabase_db import create_household, create_user_profile
+from api.supabase_db import (
+    create_household, 
+    create_user_profile,
+    get_household_by_join_code,
+    clear_join_code,
+)
 
 
 def SignupSetupPage(auth_result, on_setup_complete):
@@ -12,7 +17,11 @@ def SignupSetupPage(auth_result, on_setup_complete):
 
     household_name_input = ft.TextField(label="Household Name", width=300)
     location_input = ft.TextField(label="Location", width=300)
-
+    join_code_input = ft.TextField(
+        label="Household Join Code", 
+        width=300,
+        hint_text="Enter 6-character code"
+    )
     message_text = ft.Text(
         "",
         color=ft.Colors.RED_700,
@@ -23,6 +32,7 @@ def SignupSetupPage(auth_result, on_setup_complete):
     setup_mode = {
         "value": "choice"
     }
+    view = None  # assign afrer all funcitons are defeind
 
     def save_user_with_household(household):
         first_name = (first_name_input.value or "").strip()
@@ -75,10 +85,15 @@ def SignupSetupPage(auth_result, on_setup_complete):
         view.controls = get_create_household_controls()
         view.update()
     
-    # TODO
     def show_join_household(e=None):
-        message_text.value = "Join household will be added later."
-        view.controls = get_choice_controls()
+        message_text.value = ""
+        join_code_input.value = ""  
+
+        if not validate_name():
+            return
+
+        setup_mode["value"] = "join"
+        view.controls = get_join_household_controls()
         view.update()
 
     def submit_create_household(e):
@@ -105,6 +120,49 @@ def SignupSetupPage(auth_result, on_setup_complete):
         except Exception as ex:
             message_text.value = f"Setup failed. {ex}"
             view.controls = get_create_household_controls()
+            view.update()
+
+    def submit_join_household(e):
+        message_text.value = ""
+
+        join_code = (join_code_input.value or "").strip().upper()
+
+        if not join_code:
+            message_text.value = "Please enter a join code."
+            view.controls = get_join_household_controls()
+            view.update()
+            return
+
+        if len(join_code) != 6:
+            message_text.value = "Join code must be 6 characters."
+            view.controls = get_join_household_controls()
+            view.update()
+            return
+
+        try:
+            household = get_household_by_join_code(access_token, join_code)
+            household_id = household.get("id")
+
+            if not household:
+                message_text.value = "Invalid join code. Please check and try again."
+                view.controls = get_join_household_controls()
+                view.update()
+                return            
+    
+            if not household_id:
+                message_text.value = "Error: Could not retrieve household ID."
+                view.controls = get_join_household_controls()
+                view.update()
+                return
+
+            save_user_with_household(household)
+            clear_join_code(access_token, household_id)
+            
+
+        except Exception as ex:
+           
+            message_text.value = f"Failed to join household= {ex}"
+            view.controls = get_join_household_controls()
             view.update()
 
     def title_controls():
@@ -214,6 +272,35 @@ def SignupSetupPage(auth_result, on_setup_complete):
             message_text,
         ]
 
+    def get_join_household_controls():
+        return [
+            *title_controls(),
+            ft.Text(
+                "Enter the 6-character code from your household owner:",
+                width=300,
+                text_align=ft.TextAlign.CENTER,
+                color=ft.Colors.GREY_700,
+            ),
+            join_code_input,
+            ft.FilledButton(
+                content=ft.Text(
+                    "Join Household",
+                    color=ft.Colors.WHITE,
+                    weight=ft.FontWeight.BOLD,
+                ),
+                width=300,
+                height=50,
+                style=ft.ButtonStyle(bgcolor=ft.Colors.BLUE_800),
+                on_click=submit_join_household,
+            ),
+            ft.TextButton(
+                "Back",
+                on_click=show_choice,
+            ),
+            message_text,
+        ]
+
+    # create view
     view = ft.Column(
         get_name_controls(),
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,

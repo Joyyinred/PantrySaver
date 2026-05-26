@@ -76,6 +76,10 @@ def main(page: ft.Page):
             user_id=user.get("id"),
         )
 
+        # add token to user profile
+        if user_profile:
+            user_profile["access_token"] = access_token
+
         household = None
 
         if user_profile and user_profile.get("household_id"):
@@ -111,6 +115,11 @@ def main(page: ft.Page):
         nonlocal account_content
 
         save_auth_session(auth_result)
+        access_token = auth_result.get("access_token")
+
+        # add token to user profile
+        if user_profile:
+            user_profile["access_token"] = access_token
 
         session["user_profile"] = user_profile
         session["household"] = household

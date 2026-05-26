@@ -6,6 +6,9 @@ import re
 
 import requests
 
+import random
+import string
+
 from api.supabase_auth import SUPABASE_URL, SUPABASE_ANON_KEY
 
 
@@ -138,4 +141,33 @@ def mark_household_modified(access_token, household_id):
 
     if response.status_code not in [200, 204]:
 
+        raise Exception(response.text)
+
+def generate_join_code(access_token, household_id):
+    code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    url = f"{SUPABASE_URL}/rest/v1/households?id=eq.{household_id}"
+    body = {"join_code": code}
+    response = requests.patch(url, headers=auth_headers(access_token), json=body)
+    if response.status_code not in [200, 204]:
+        raise Exception(response.text)
+    return code
+
+def get_household_by_join_code(access_token, join_code):
+    url = f"{SUPABASE_URL}/rest/v1/households"
+    response = requests.get(
+        f"{url}?join_code=eq.{join_code}&select=*",
+        headers=auth_headers(access_token),
+    )
+    if response.status_code != 200:
+        raise Exception(response.text)
+    data = response.json()
+    if not data:
+        return None
+    return data[0]
+
+def clear_join_code(access_token, household_id):
+    url = f"{SUPABASE_URL}/rest/v1/households?id=eq.{household_id}"
+    body = {"join_code": None}
+    response = requests.patch(url, headers=auth_headers(access_token), json=body)
+    if response.status_code not in [200, 204]:
         raise Exception(response.text)

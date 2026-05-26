@@ -1,6 +1,7 @@
 import asyncio
 import flet as ft
 from components.reuseable_ui_elements import show_big_round_button, show_header
+from api.supabase_db import generate_join_code
 
 def AccountPage(on_logout_click, user_profile=None, household=None):
 
@@ -20,6 +21,7 @@ def AccountPage(on_logout_click, user_profile=None, household=None):
 
     if household:
         household_name = household.get("name") or "No household"
+        household_id = household.get("Id") or "No household"
 
     header = show_header(
         title="My Account",
@@ -37,11 +39,22 @@ def AccountPage(on_logout_click, user_profile=None, household=None):
 
     # TODO - should generate a one time code for new user and add to database of household. The new user can use that code to join household, that should erase the code from the database.
     async def on_invite_click(e):
-        code_display.opacity = 1
-        code_display.update()
-        await asyncio.sleep(10)
-        code_display.opacity = 0
-        code_display.update()
+        try:
+            access_token = user_profile.get("access_token")
+            household_id = household.get("id")
+
+            if not access_token or not household_id:
+                raise ValueError("Access token or household ID is missing")
+
+            code = generate_join_code(access_token, household_id)
+            code_display.value = code
+            code_display.opacity = 1
+            code_display.update()
+            await asyncio.sleep(10)
+            code_display.opacity = 0
+            code_display.update()
+        except Exception as e: 
+            print (f' "Error when generating code: " , {e}')
 
     logout_btn = show_big_round_button(ft.Icons.LOGOUT, ft.Colors.RED_700)
     logout_btn.on_click = on_logout_click
