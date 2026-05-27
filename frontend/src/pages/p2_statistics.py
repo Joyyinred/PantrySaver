@@ -116,6 +116,7 @@ def StatisticsPage(session):
         stat_bars_column.controls = [
             stat_row(item["item_name"], item["ratio"])
             for item in data
+            if item["ratio"] is not None
         ]
 
         pie_canvas_container.content = build_pie_canvas(data)

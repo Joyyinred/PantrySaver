@@ -135,6 +135,11 @@ def calculate_ratios(household_id, purchased, discarded):
                 discarded_quant += i["quantity_discarded"]
 
         if purchased_quant == 0:
+            portion = discarded_quant / total_discarded
+            supabase.table("ratios").upsert(
+                {"item_name": name, "household_id": household_id, "ratio": None, "portion": portion},
+                on_conflict="item_name,household_id"
+            ).execute()
             continue
 
         ratio = discarded_quant / purchased_quant
