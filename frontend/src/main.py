@@ -39,7 +39,7 @@ def main(page: ft.Page):
     )
 
     log_food_content = LogFoodPage(session, page)
-    statistics_content = StatisticsPage()
+    statistics_content, load_statistics = StatisticsPage(session)
     recommendations_content = RecommendationPage()
 
     app_tab_content_area = ft.Container(
@@ -160,8 +160,11 @@ def main(page: ft.Page):
             2: recommendations_content,
             3: account_content
         }
-        app_tab_content_area.content = tab_routing_map.get(e.control.selected_index, log_food_content)
+        selected = e.control.selected_index
+        app_tab_content_area.content = tab_routing_map.get(selected, log_food_content)
         page.update()
+        if selected == 1:
+            load_statistics()
 
     nav_bar = ft.NavigationBar(
         destinations=[

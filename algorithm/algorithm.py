@@ -121,6 +121,7 @@ def give_recommendation(
 def calculate_ratios(household_id, purchased, discarded):
     calculated_ratios = {}
     discarded_unique = {d["item_name"] for d in discarded}
+    total_discarded = sum(i["quantity_discarded"] for i in discarded)
     for name in discarded_unique:
         purchased_quant = 0
         discarded_quant = 0
@@ -134,15 +135,25 @@ def calculate_ratios(household_id, purchased, discarded):
                 discarded_quant += i["quantity_discarded"]
 
         if purchased_quant == 0:
+            portion = discarded_quant / total_discarded
+            supabase.table("ratios").upsert(
+                {"item_name": name, "household_id": household_id, "ratio": None, "portion": portion},
+                on_conflict="item_name,household_id"
+            ).execute()
             continue
 
         ratio = discarded_quant / purchased_quant
+        if ratio > 1:
+            ratio = 1
         calculated_ratios[name] = ratio
 
+        portion = discarded_quant / total_discarded
+
         supabase.table("ratios").upsert(
-            {"item_name": name, "household_id": household_id, "ratio": ratio},
+            {"item_name": name, "household_id": household_id, "ratio": ratio, "portion":portion},
             on_conflict="item_name,household_id"
         ).execute()
-        
+
     return calculated_ratios
+    
 
