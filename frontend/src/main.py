@@ -38,8 +38,9 @@ def main(page: ft.Page):
         )
     )
 
+    print(session)
     log_food_content = LogFoodPage()
-    statistics_content = StatisticsPage()
+    statistics_content = StatisticsPage(session["household"][1])
     recommendations_content = RecommendationPage()
 
     app_tab_content_area = ft.Container(

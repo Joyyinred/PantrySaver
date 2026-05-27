@@ -2,7 +2,7 @@ import flet as ft
 from components.reuseable_ui_elements import show_header, stat_row, show_big_round_button
 from db import supabase
 
-def StatisticsPage():
+def StatisticsPage(household_id):
     header = show_header(
         title="Statistics",
         subtitle="Your household waste distribution ratios:"
@@ -11,19 +11,13 @@ def StatisticsPage():
     response = (
         supabase.table("ratios")
         .select("*")
-        # .eq("household_id", household_id)
+        .eq("household_id", household_id)
         .execute()
     )
 
     stats_data = [
-        ("Milk", 0.95), ("Bread", 0.88), ("Eggs", 0.75), ("Cheese", 0.65),
-        ("Yogurt", 0.60), ("Butter", 0.55), ("Chicken", 0.40), ("Beef", 0.35),
-        ("Apples", 0.30), ("Oranges", 0.25), ("Bananas", 0.20), ("Carrots", 0.15),
-        ("Potatoes", 0.10), ("Onions", 0.05), ("Tomatoes", 0.85), ("Cucumber", 0.70),
-        ("Spinach", 0.62), ("Broccoli", 0.58), ("Pasta", 0.52), ("Rice", 0.48),
-        ("Beans", 0.42), ("Lentils", 0.38), ("Coffee", 0.33), ("Tea", 0.28),
-        ("Sugar", 0.22), ("Flour", 0.18), ("Cereal", 0.12), ("Oats", 0.08),
-        ("Honey", 0.04), ("Jam", 0.90), ("Peanut Butter", 0.82), ("Chocolate", 0.78)
+        (item["item_name"], item["ratio"])
+        for item in response.data
     ]
 
     stat_bars = []
