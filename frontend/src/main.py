@@ -15,7 +15,7 @@ if not os.path.exists('database.db'):
     init_database()
 
 def main(page: ft.Page):
-    
+
     # stores the logged-in Supabase user information while the app is open
     session = {
         "access_token": None,
@@ -25,7 +25,7 @@ def main(page: ft.Page):
         "household": None,
 
     }
-    
+
     page.title = "Pantry Saver"
     page.theme = ft.Theme(
         color_scheme=ft.ColorScheme(
@@ -38,18 +38,17 @@ def main(page: ft.Page):
         )
     )
 
-    print(session)
-    log_food_content = LogFoodPage()
+    log_food_content = LogFoodPage(session, page)
     statistics_content = StatisticsPage()
     recommendations_content = RecommendationPage()
 
     app_tab_content_area = ft.Container(
-        content=log_food_content, 
-        padding=20, 
-        expand=True, 
+        content=log_food_content,
+        padding=20,
+        expand=True,
         alignment=ft.Alignment.TOP_CENTER
     )
-    
+
     # after login succedds call this function, auth_result is the response from Supabase
     def save_auth_session(auth_result):
         session["access_token"] = auth_result.get("access_token")
@@ -76,6 +75,10 @@ def main(page: ft.Page):
             access_token=access_token,
             user_id=user.get("id"),
         )
+
+        # add token to user profile
+        if user_profile:
+            user_profile["access_token"] = access_token
 
         household = None
 
@@ -112,6 +115,11 @@ def main(page: ft.Page):
         nonlocal account_content
 
         save_auth_session(auth_result)
+        access_token = auth_result.get("access_token")
+
+        # add token to user profile
+        if user_profile:
+            user_profile["access_token"] = access_token
 
         session["user_profile"] = user_profile
         session["household"] = household
@@ -123,7 +131,7 @@ def main(page: ft.Page):
         )
 
         show_main_app()
-    
+
     def on_logout_click():
         nonlocal account_content
 
@@ -133,7 +141,7 @@ def main(page: ft.Page):
         session["user_profile"] = None
         session["household"] = None
         account_content = None
-        
+
         email_field.value = ""
         password_field.value = ""
         main_container.content = login_form
@@ -142,7 +150,7 @@ def main(page: ft.Page):
     login_form, email_field, password_field = LoginPage(
         on_login_click=on_login_click,
         on_signup_click=on_signup_click,)
-    
+
     account_content = None
 
     def on_tab_change(e):
@@ -168,7 +176,7 @@ def main(page: ft.Page):
 
     log_food_screen = ft.Column(
         [
-            app_tab_content_area,  
+            app_tab_content_area,
             nav_bar
         ],
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
