@@ -2,3 +2,8 @@ flet
 requests
 supabase
 python-dotenv
+
+# add:
+flet-cli
+flet-web
+flet-desktop
