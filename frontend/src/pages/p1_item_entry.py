@@ -5,13 +5,42 @@ from database import log_purchased_item_local, log_discarded_item_local
 
 def LogFoodPage(session, page: ft.Page):
 
+    async def pick_files_result(e):
+
+        if e.files:
+
+            page.snack_bar = ft.SnackBar(ft.Text(f"File '{e.files[0].name}' selected. Starting OCR..."))
+            page.snack_bar.open = True
+            page.update()
+
     file_picker = ft.FilePicker()
-    page.overlay.append(file_picker)
+    file_picker.on_result = pick_files_result
 
     header = show_header(
         title="Log Food",
         subtitle="Keep track of your pantry items and reduce waste!"
     )
+
+    async def open_camera(e):
+
+
+        await file_picker.pick_files(
+            allow_multiple=False,
+            file_type=ft.FilePickerFileType.IMAGE
+        )
+        page.overlay.append(file_picker)
+        page.update()
+
+    async def open_file_picker(e):
+
+
+        await file_picker.pick_files(
+            allow_multiple=False,
+            file_type=ft.FilePickerFileType.CUSTOM,
+            allowed_extensions=['pdf', 'png', 'jpg', 'jpeg']
+        )
+        page.overlay.append(file_picker)
+        page.update()
 
     dscrd_btn = show_big_round_button(ft.Icons.DELETE_OUTLINE, ft.Colors.RED_700)
     dscrd_btn.on_click = lambda _: open_log_dialog(False)
@@ -20,15 +49,11 @@ def LogFoodPage(session, page: ft.Page):
 
     # Opens camera on click
     by_pht_btn = show_big_round_button(ft.Icons.PHOTO_CAMERA, ft.Colors.BLUE_800)
-    by_pht_btn.on_click = lambda _: page.run_task(pick_file_task, file_type='image')
+    by_pht_btn.on_click = open_camera
 
     # Opens selection for a file
     by_img_btn = show_big_round_button(ft.Icons.IMAGE, ft.Colors.BLUE_800)
-    by_img_btn.on_click = lambda _: page.run_task(
-        pick_file_task,
-        file_type='custom',
-        allowed_extensions=['pdf', 'png', 'jpg', 'jpeg']
-    )
+    by_img_btn.on_click = open_file_picker
 
     by_key_btn = show_big_round_button(ft.Icons.KEYBOARD, ft.Colors.BLUE_800)
     by_key_btn.on_click = lambda _: open_log_dialog(True)
@@ -95,19 +120,6 @@ def LogFoodPage(session, page: ft.Page):
         expand=True
     )
 
-    async def pick_file_task(file_type='any', allowed_extensions=None):
-
-        result = await file_picker.pick_files(
-            allow_multiple=False,
-            file_type=file_type,
-            allowed_extensions=allowed_extensions
-        )
-
-        if result:
-
-            page.snack_bar = ft.SnackBar(ft.Text(f"File '{result[0].name}' selected. Starting OCR..."))
-            page.snack_bar.open = True
-            page.update()
 
 
     # Manual Logging Logic
