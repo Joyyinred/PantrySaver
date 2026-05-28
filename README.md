@@ -52,10 +52,10 @@ SUPABASE_KEY=sb_publishable_WSh3sw_jmKTqJdd7SYf__Q_iSj15XoA
 ### macOS/Linux
 ```bash
 cd algorithm
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python main.py
+python3 main.py
 ```
 
 ### Windows Command Prompt
@@ -72,7 +72,7 @@ python main.py
 ### macOS/Linux
 ```bash
 cd frontend
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 flet run src/main.py
