@@ -56,17 +56,17 @@ cd algorithm
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python run_worker.py
+python3 run_worker.py
 ```
 
 ### Windows Command Prompt
 
 ```bash
 cd algorithm
-python -m venv .venv
+python3 -m venv .venv
 .venv\Scripts\activate.bat
 pip install -r requirements.txt
-python run_worker.py
+python3 run_worker.py
 ```
 
 ## Run Frontend
@@ -85,7 +85,7 @@ flet run src/main.py
 
 ```bash
 cd frontend
-python -m venv .venv
+python3 -m venv .venv
 .venv\Scripts\activate.bat
 pip install -r requirements.txt
 flet run src/main.py
@@ -138,13 +138,13 @@ The worker files are split by responsibility:
 Run with default settings:
 
 ```bash
-python run_worker.py
+python3 run_worker.py
 ```
 
 Or configure the intervals:
 
 ```bash
-python run_worker.py --freq 30 --shortterm 7 --longterm 60
+python3 run_worker.py --freq 30 --shortterm 7 --longterm 60
 ```
 
 | Argument | Default | Description |
