@@ -44,7 +44,6 @@ def process_modified_households(
         return 0
 
     templates = get_recommendation_templates()
-
     for household_id in modified_households:
         process_household(
             household_id,
@@ -237,6 +236,13 @@ def process_household(
         ratio = item_ratios.get(item_name, 0.0)
         weight = item_weights.get(item_name, 1.0)
 
+        print(
+            f"checking {item_name}: "
+            f"purchased={len(specific_purchases)}, "
+            f"discarded={len(specific_discards)}, "
+            f"ratio={ratio:.1%}, weight={weight:.2f}"
+        )
+
         plan = algorithm.plan_recommendation(
             item_name=item_name,
             purchased_items=specific_purchases,
@@ -258,6 +264,9 @@ def process_household(
     saved_count = 0
     if plans:
         saved_count = save_recommendations(household_id, plans, templates) or 0
+    else:
+        deactivate_current_recommendations(household_id)
+
     print(f"saved {saved_count} recommendation(s)")
 
     try:

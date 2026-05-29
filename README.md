@@ -138,13 +138,13 @@ The worker files are split by responsibility:
 Run with default settings:
 
 ```bash
-python3 run_worker.py
+python run_worker.py
 ```
 
 Or configure the intervals:
 
 ```bash
-python3 run_worker.py --freq 30 --shortterm 7 --longterm 60
+python run_worker.py --freq 30 --shortterm 7 --longterm 60
 ```
 
 | Argument | Default | Description |

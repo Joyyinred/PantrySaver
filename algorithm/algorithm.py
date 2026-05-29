@@ -19,26 +19,6 @@ class RecommendationPlan:
     reason: str
 
 
-SHELF_LIFE_DAYS = {
-    "banana": 5,
-    "bananas": 5,
-    "berries": 3,
-    "bread": 5,
-    "cheese": 21,
-    "chicken": 2,
-    "cucumber": 7,
-    "eggs": 21,
-    "fish": 2,
-    "lettuce": 4,
-    "milk": 7,
-    "spinach": 4,
-    "tomato": 6,
-    "tomatoes": 6,
-    "yogurt": 14,
-}
-DEFAULT_SHELF_LIFE_DAYS = 10
-
-
 def parse_logged_at(value: str | None) -> datetime | None:
     if not value:
         return None
@@ -58,11 +38,6 @@ def get_sorted_timestamps(items: list, key: str = "logged_at") -> list[datetime]
             timestamps.append(logged_at)
 
     return sorted(timestamps)
-
-
-def get_shelf_life_days(item_name: str) -> int:
-    normalized_name = item_name.strip().lower()
-    return SHELF_LIFE_DAYS.get(normalized_name, DEFAULT_SHELF_LIFE_DAYS)
 
 
 def clamp(value: float, minimum: float = 0.0, maximum: float = 1.0) -> float:
@@ -138,24 +113,29 @@ def calculate_ratios(household_id: str, purchased: list, discarded: list) -> dic
     return calculated_ratios
 
 
-def detect_missing_purchase_log(purchased_items: list, discarded_items: list) -> bool:
+def detect_missing_purchase_log(
+    purchased_items: list,
+    discarded_items: list,
+    recent_purchase_window_days: int = 30,
+) -> bool:
+    now = datetime.now(timezone.utc)
     purchase_dates = get_sorted_timestamps(purchased_items)
     discard_dates = get_sorted_timestamps(discarded_items)
 
     if not discard_dates:
         return False
 
-    last_purchase = purchase_dates[-1] if purchase_dates else None
-    last_discard = discard_dates[-1]
-    second_last_discard = discard_dates[-2] if len(discard_dates) >= 2 else None
+    recent_purchase_dates = [
+        purchase_date
+        for purchase_date in purchase_dates
+        if (now - purchase_date).days <= recent_purchase_window_days
+    ]
 
-    if not last_purchase:
-        return True
+    return not recent_purchase_dates
 
-    if second_last_discard:
-        return not (second_last_discard < last_purchase < last_discard)
 
-    return not (last_purchase < last_discard)
+def was_never_logged_as_bought(purchased_items: list, discarded_items: list) -> bool:
+    return bool(discarded_items) and not purchased_items
 
 
 def plan_recommendation(
@@ -174,19 +154,14 @@ def plan_recommendation(
         longterm_change_in_days,
     )
     forgot_to_log = detect_missing_purchase_log(purchased_items, discarded_items)
+    never_bought = was_never_logged_as_bought(purchased_items, discarded_items)
     now = datetime.now(timezone.utc)
-    purchase_dates = get_sorted_timestamps(purchased_items)
     discard_dates = get_sorted_timestamps(discarded_items)
-    last_purchase = purchase_dates[-1] if purchase_dates else None
     last_discard = discard_dates[-1] if discard_dates else None
-    shelf_life_days = get_shelf_life_days(item_name)
 
-    days_since_purchase = (now - last_purchase).days if last_purchase else None
-    purchase_age_risk = (
-        clamp(days_since_purchase / shelf_life_days)
-        if days_since_purchase is not None
-        else 0.0
-    )
+    if not discarded_items:
+        return None
+
     recent_waste_risk = (
         clamp(1 - ((now - last_discard).days / 30))
         if last_discard
@@ -197,20 +172,19 @@ def plan_recommendation(
     confidence_weight = clamp(item_weight / 3)
 
     risk_score = (
-        waste_ratio_risk * 0.35
-        + purchase_age_risk * 0.25
-        + recent_waste_risk * 0.2
-        + discard_frequency_risk * 0.15
+        waste_ratio_risk * 0.45
+        + recent_waste_risk * 0.25
+        + discard_frequency_risk * 0.25
         + confidence_weight * 0.05
     )
     adaptive_score = risk_score * max(item_weight, 0.1)
 
-    if status == ItemStatus.red or risk_score >= 0.7:
+    if never_bought or waste_ratio_risk >= 0.75 or status == ItemStatus.red or risk_score >= 0.7:
         return RecommendationPlan(
             item_name=item_name,
             card_type="alert",
             score=min(adaptive_score + 1.2, 5.0),
-            reason="High spoilage risk from waste history, age, and feedback.",
+            reason="High waste risk from discard history, ratio, and missing purchase data.",
         )
 
     if forgot_to_log:
@@ -221,20 +195,12 @@ def plan_recommendation(
             reason="Discard was logged without a matching recent purchase log.",
         )
 
-    if status == ItemStatus.yellow or (was_logged_as_purchased and risk_score >= 0.25):
+    if discarded_items and (status == ItemStatus.yellow or was_logged_as_purchased):
         return RecommendationPlan(
             item_name=item_name,
             card_type="tip",
             score=min(adaptive_score + 0.45, 5.0),
-            reason="Moderate spoilage risk; a gentle action is enough.",
-        )
-
-    if purchase_dates and purchase_age_risk >= 0.5:
-        return RecommendationPlan(
-            item_name=item_name,
-            card_type="tip",
-            score=min(0.15 + purchase_age_risk, 5.0),
-            reason="Purchased item is old enough to deserve a gentle reminder.",
+            reason="Item has been discarded before; a gentle action may prevent repeat waste.",
         )
 
     return None

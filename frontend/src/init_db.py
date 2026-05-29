@@ -1,5 +1,4 @@
 import sqlite3
-import uuid
 
 def init_database():
 
@@ -9,7 +8,7 @@ def init_database():
 
     c.execute('''
     create table if not exists households (
-        id text primary key,
+        id text primary key default (lower(hex(randomblob(16)))),
         name text not null,
         location text,
         created_at text default current_timestamp,
@@ -21,7 +20,7 @@ def init_database():
 
     c.execute('''
     create table if not exists users (
-        id text primary key,
+        id text primary key default (lower(hex(randomblob(16)))),
         email text unique not null,
         household_id text not null references households(id) on delete cascade,
         created_at text default current_timestamp,
@@ -31,8 +30,19 @@ def init_database():
     ''')
 
     c.execute('''
+    create table if not exists admins (
+        id text primary key default (lower(hex(randomblob(16)))),
+        user_id text unique,
+        email text unique not null,
+        display_name text,
+        is_active boolean default 1,
+        created_at text default current_timestamp
+        )
+    ''')
+
+    c.execute('''
     create table if not exists purchased_items (
-        id text primary key,
+        id text primary key default (lower(hex(randomblob(16)))),
         household_id text not null references households(id) on delete cascade,
         item_name text not null,
         quantity real not null,
@@ -52,7 +62,7 @@ def init_database():
 
     c.execute('''
     create table if not exists discarded_items (
-        id text primary key,
+        id text primary key default (lower(hex(randomblob(16)))),
         household_id text not null references households(id) on delete cascade,
         item_name text not null,
         quantity_discarded real not null,
@@ -63,7 +73,7 @@ def init_database():
 
     c.execute('''
     create table if not exists categories (
-        id text primary key,
+        id text primary key default (lower(hex(randomblob(16)))),
         name text unique not null
         )
     ''')
@@ -90,7 +100,7 @@ def init_database():
     create table if not exists recommendation_templates (
         id integer primary key autoincrement,
         type text not null, -- 'ask', 'alert', or 'tip'
-        template_text text not null
+        template_text text not null unique
         )
     ''')
 
@@ -109,9 +119,9 @@ def init_database():
 
     c.execute('''
     create table if not exists recommendations (
-        id text primary key,
+        id text primary key default (lower(hex(randomblob(16)))),
         household_id text not null references households(id) on delete cascade,
-        template_id integer references recommendation_templates(id) on delete cascade,
+        template_id integer,
         item_name text not null,
         type text not null,
         subtitle text not null,
@@ -128,6 +138,7 @@ def init_database():
     c.execute('create index if not exists idx_purchased_household on purchased_items(household_id)')
     c.execute('create index if not exists idx_discarded_household on discarded_items(household_id)')
     c.execute('create index if not exists idx_ratios_household on ratios(household_id)')
+    c.execute('create index if not exists idx_admins_user on admins(user_id)')
 
     conn.commit()
     conn.close()
