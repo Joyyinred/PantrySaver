@@ -4,21 +4,6 @@ import algorithm
 from db import supabase
 
 
-FALLBACK_TEMPLATES = {
-    "ask": [
-        {"id": 1, "template_text": "Did you recently buy !ITEM! and forget to log it?"},
-        {"id": 2, "template_text": "Is !ITEM! still in your inventory?"},
-    ],
-    "alert": [
-        {"id": 3, "template_text": "There is a high risk that your !ITEM! will go bad soon. Eat or donate it!"},
-        {"id": 4, "template_text": "Your !ITEM! is reaching its expiration day. Please process it today."},
-    ],
-    "tip": [
-        {"id": 5, "template_text": "Why not use your !ITEM! in a fresh salad today?"},
-        {"id": 6, "template_text": "Boost your nutrition by adding !ITEM! to your next meal!"},
-    ],
-}
-
 TEMPLATE_RULES = {
     "missing_purchase": {
         "preferred_ids": [1],
@@ -155,13 +140,12 @@ def get_recommendation_templates() -> dict[str, list[dict]]:
         )
 
         if loaded_count == 0:
-            print("recommendation template table is empty; using fallback templates")
-            return FALLBACK_TEMPLATES
+            print("recommendation template table is empty; no recommendations will be generated")
 
         return templates
     except Exception as e:
         print(f"could not fetch recommendation templates (worker.get_recommendation_templates): {e}")
-        return FALLBACK_TEMPLATES
+        return {"ask": [], "alert": [], "tip": []}
 
 
 def choose_template(
@@ -170,7 +154,10 @@ def choose_template(
     item_name: str,
     template_key: str,
 ) -> dict:
-    candidates = templates.get(card_type) or FALLBACK_TEMPLATES[card_type]
+    candidates = templates.get(card_type) or []
+    if not candidates:
+        return {}
+
     rule = TEMPLATE_RULES.get(template_key, {})
 
     preferred_ids = {str(template_id) for template_id in rule.get("preferred_ids", [])}
@@ -231,7 +218,7 @@ def save_recommendations(household_id: str, plans: list[algorithm.Recommendation
             }
         )
         print(
-            f"using {template.get('source', 'fallback')} template "
+            f"using {template.get('source', 'database')} template "
             f"{template.get('id')} for {plan.card_type}/{plan.item_name}"
         )
 
