@@ -63,10 +63,10 @@ python3 run_worker.py
 
 ```bash
 cd algorithm
-python3 -m venv .venv
+python -m venv .venv
 .venv\Scripts\activate.bat
 pip install -r requirements.txt
-python3 run_worker.py
+python run_worker.py
 ```
 
 ## Run Frontend
@@ -85,7 +85,7 @@ flet run src/main.py
 
 ```bash
 cd frontend
-python3 -m venv .venv
+python -m venv .venv
 .venv\Scripts\activate.bat
 pip install -r requirements.txt
 flet run src/main.py
