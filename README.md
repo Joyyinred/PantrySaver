@@ -117,7 +117,7 @@ The admin menu is reached from the normal login screen. Log in with the admin Su
 ```text
 Email: admin@pantrysaver.se
 Password: 123456
-
+```
 
 ## MAPE Recommendation Loop
 
