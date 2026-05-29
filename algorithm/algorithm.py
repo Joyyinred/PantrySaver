@@ -17,6 +17,7 @@ class RecommendationPlan:
     card_type: str
     score: float
     reason: str
+    template_key: str
 
 
 def parse_logged_at(value: str | None) -> datetime | None:
@@ -179,20 +180,27 @@ def plan_recommendation(
     )
     adaptive_score = risk_score * max(item_weight, 0.1)
 
-    if never_bought or waste_ratio_risk >= 0.75 or status == ItemStatus.red or risk_score >= 0.7:
+    if forgot_to_log or never_bought:
+        reason = (
+            "Discard was logged with no purchase history for this item."
+            if never_bought
+            else "Discard was logged without a matching recent purchase log."
+        )
+        return RecommendationPlan(
+            item_name=item_name,
+            card_type="ask",
+            score=min(adaptive_score + 0.75, 5.0),
+            reason=reason,
+            template_key="missing_purchase",
+        )
+
+    if waste_ratio_risk >= 0.75 or status == ItemStatus.red or risk_score >= 0.7:
         return RecommendationPlan(
             item_name=item_name,
             card_type="alert",
             score=min(adaptive_score + 1.2, 5.0),
             reason="High waste risk from discard history, ratio, and missing purchase data.",
-        )
-
-    if forgot_to_log:
-        return RecommendationPlan(
-            item_name=item_name,
-            card_type="ask",
-            score=min(adaptive_score + 0.75, 5.0),
-            reason="Discard was logged without a matching recent purchase log.",
+            template_key="high_waste_risk",
         )
 
     if discarded_items and (status == ItemStatus.yellow or was_logged_as_purchased):
@@ -201,6 +209,7 @@ def plan_recommendation(
             card_type="tip",
             score=min(adaptive_score + 0.45, 5.0),
             reason="Item has been discarded before; a gentle action may prevent repeat waste.",
+            template_key="use_soon_tip",
         )
 
     return None

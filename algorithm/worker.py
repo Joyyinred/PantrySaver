@@ -6,17 +6,40 @@ from db import supabase
 
 FALLBACK_TEMPLATES = {
     "ask": [
-        {"id": None, "template_text": "Did you forget to log a recent !ITEM! purchase?"},
-        {"id": None, "template_text": "Is the !ITEM! discard correct, or is there missing purchase data?"},
+        {"id": 1, "template_text": "Did you recently buy !ITEM! and forget to log it?"},
+        {"id": 2, "template_text": "Is !ITEM! still in your inventory?"},
     ],
     "alert": [
-        {"id": None, "template_text": "!ITEM! looks high-risk now. Use it, freeze it, or donate it soon."},
-        {"id": None, "template_text": "Your household pattern suggests !ITEM! may become waste soon."},
+        {"id": 3, "template_text": "There is a high risk that your !ITEM! will go bad soon. Eat or donate it!"},
+        {"id": 4, "template_text": "Your !ITEM! is reaching its expiration day. Please process it today."},
     ],
     "tip": [
-        {"id": None, "template_text": "Plan one meal around !ITEM! before the next grocery trip."},
-        {"id": None, "template_text": "Move !ITEM! to the front of the fridge so it gets used first."},
+        {"id": 5, "template_text": "Why not use your !ITEM! in a fresh salad today?"},
+        {"id": 6, "template_text": "Boost your nutrition by adding !ITEM! to your next meal!"},
     ],
+}
+
+TEMPLATE_RULES = {
+    "missing_purchase": {
+        "preferred_ids": [1],
+        "keywords": ["recently buy", "forgot", "forget", "log"],
+    },
+    "inventory_check": {
+        "preferred_ids": [2],
+        "keywords": ["still in your inventory"],
+    },
+    "high_waste_risk": {
+        "preferred_ids": [3],
+        "keywords": ["high risk", "go bad", "eat or donate"],
+    },
+    "expiration_risk": {
+        "preferred_ids": [4],
+        "keywords": ["expiration", "exparation", "process"],
+    },
+    "use_soon_tip": {
+        "preferred_ids": [5, 6],
+        "keywords": ["fresh salad", "next meal", "nutrition"],
+    },
 }
 
 
@@ -141,8 +164,26 @@ def get_recommendation_templates() -> dict[str, list[dict]]:
         return FALLBACK_TEMPLATES
 
 
-def choose_template(templates: dict[str, list[dict]], card_type: str, item_name: str) -> dict:
+def choose_template(
+    templates: dict[str, list[dict]],
+    card_type: str,
+    item_name: str,
+    template_key: str,
+) -> dict:
     candidates = templates.get(card_type) or FALLBACK_TEMPLATES[card_type]
+    rule = TEMPLATE_RULES.get(template_key, {})
+
+    preferred_ids = {str(template_id) for template_id in rule.get("preferred_ids", [])}
+    for candidate in candidates:
+        if str(candidate.get("id")) in preferred_ids:
+            return candidate
+
+    keywords = rule.get("keywords", [])
+    for candidate in candidates:
+        template_text = (candidate.get("template_text") or "").lower()
+        if any(keyword in template_text for keyword in keywords):
+            return candidate
+
     stable_index = sum(ord(char) for char in item_name) % len(candidates)
     return candidates[stable_index]
 
@@ -176,7 +217,7 @@ def save_recommendations(household_id: str, plans: list[algorithm.Recommendation
             print(f"no database template found for {plan.card_type}; skipping {plan.item_name}")
             continue
 
-        template = choose_template(templates, plan.card_type, plan.item_name)
+        template = choose_template(templates, plan.card_type, plan.item_name, plan.template_key)
         rows.append(
             {
                 "id": str(uuid.uuid4()),
