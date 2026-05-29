@@ -2,6 +2,8 @@
 
 Pantry Saver is a household food tracking app. Users can sign up, log in, create or join a household, log purchased and discarded food items, and view household waste statistics and personalized recommendations.
 
+The app demo was designed with light mode in mind. Switching to dark mode may result in design inconsistencies and should be avoided.
+
 The app uses:
 
 - Flet for the frontend
