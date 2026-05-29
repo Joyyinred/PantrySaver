@@ -49,6 +49,10 @@ SUPABASE_KEY=sb_publishable_WSh3sw_jmKTqJdd7SYf__Q_iSj15XoA
 
 ## Run Algorithm
 
+The instructions vary slightly depending on your system. There are 2 files to run, one for front end and one for backened, since the algorithm and the worker will not be on user's device.
+
+Here come instructions for backend (algorithm):
+
 ### macOS/Linux
 
 ```bash
@@ -70,6 +74,8 @@ python run_worker.py
 ```
 
 ## Run Frontend
+
+These are the instructions for UI (frontend):
 
 ### macOS/Linux
 
@@ -109,9 +115,7 @@ The admin menu is reached from the normal login screen. Log in with the admin Su
 ```text
 Email: admin@pantrysaver.se
 Password: 123456
-```
 
-The account must exist in Supabase Auth and have a matching active row in `public.admins`. See `supabase_admin_setup.sql` for the table setup.
 
 ## MAPE Recommendation Loop
 
