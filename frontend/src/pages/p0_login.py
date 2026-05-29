@@ -89,25 +89,34 @@ def LoginPage(on_login_click, on_signup_click):
 
     view = ft.Column(
         [
-            ft.Text("PANTRY\nSAVER",
-                    size=40,
-                    weight=ft.FontWeight.BOLD,
-                    text_align=ft.TextAlign.CENTER,
-                    color=ft.Colors.BLUE_800
-                    ),
-
-            email_input,
-            password_input,
-            confirm_password_input,
-            login_button,
-            signup_container,
-            message_text, # add error message
+            ft.Container(
+                content=ft.Column(
+                    [
+                        ft.Text("PANTRY\nSAVER",
+                                size=40,
+                                weight=ft.FontWeight.BOLD,
+                                text_align=ft.TextAlign.CENTER,
+                                color=ft.Colors.BLUE_800
+                                ),
+                        email_input,
+                        password_input,
+                        confirm_password_input,
+                        login_button,
+                        signup_container,
+                        message_text, # add error message
+                    ],
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                    alignment=ft.MainAxisAlignment.CENTER,
+                    spacing=20,
+                ),
+                expand=True,
+                alignment=ft.Alignment.CENTER,
+            ),
         ],
 
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        alignment=ft.MainAxisAlignment.CENTER,
-        spacing=20,
-        tight=True
+        horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+        spacing=0,
+        expand=True,
     )
     
     return view, email_input, password_input

@@ -1,19 +1,106 @@
+import re
+
 import flet as ft
 
 
+def format_item_name(item_name: str) -> str:
+    item = (item_name or "item").strip()
+    return item[:1].upper() + item[1:] if item else "Item"
+
+
+def recommendation_title(card_type: str, item_name: str) -> str:
+    item_title = format_item_name(item_name)
+
+    if card_type == "ask":
+        return f"Question about {item_title}"
+
+    if card_type == "alert":
+        return f"Alert for {item_title}"
+
+    return f"Tip on {item_title}"
+
+
+def highlighted_item_text(
+    text: str,
+    item_name: str,
+    highlight_color: str,
+    base_weight=None,
+):
+    item = (item_name or "").strip()
+    text = text or ""
+
+    if not item:
+        return ft.Text(text, weight=base_weight)
+
+    matches = list(re.finditer(re.escape(item), text, flags=re.IGNORECASE))
+    if not matches:
+        return ft.Text(text, weight=base_weight)
+
+    spans = []
+    current_index = 0
+    highlight_style = ft.TextStyle(
+        color=highlight_color,
+        weight=ft.FontWeight.BOLD,
+    )
+
+    for match in matches:
+        if match.start() > current_index:
+            spans.append(ft.TextSpan(text[current_index:match.start()]))
+
+        spans.append(ft.TextSpan(match.group(0), style=highlight_style))
+        current_index = match.end()
+
+    if current_index < len(text):
+        spans.append(ft.TextSpan(text[current_index:]))
+
+    return ft.Text(spans=spans, weight=base_weight)
+
+
+def infer_feedback_labels(card_type: str, subtitle: str) -> tuple[str, str]:
+    text = (subtitle or "").lower()
+
+    if card_type == "ask":
+        return "Yes", "No"
+
+    if "donate" in text:
+        return "Used/donated", "Not now"
+
+    if "process" in text:
+        return "Processed", "Not now"
+
+    if "adding" in text or "add " in text:
+        return "I'll add it", "No thanks"
+
+    if "salad" in text or "meal" in text:
+        return "I'll make it", "Not today"
+
+    if "use" in text or "eat" in text:
+        return "I'll use it", "Not today"
+
+    if card_type == "alert":
+        return "Handled", "Dismiss"
+
+    if card_type == "tip":
+        return "I'll try it", "Not useful"
+
+    return "Helpful", "Not useful"
+
+
 def show_recommendation_card(
-    title: str, 
-    subtitle: str, 
-    icon: str, 
-    icon_color: str, 
-    bg_color: str, 
+    card_id: str,
+    title: str,
+    subtitle: str,
+    item_name: str,
+    icon: str,
+    icon_color: str,
+    bg_color: str,
     action_buttons: list
 ):
     button_container = ft.Column(
-        controls=action_buttons,
+        controls=action_buttons,  # Kept exactly as your original code
         spacing=8,
         alignment=ft.MainAxisAlignment.CENTER,
-        horizontal_alignment=ft.CrossAxisAlignment.CENTER 
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER
     )
 
     card_content = ft.Row(
@@ -21,10 +108,19 @@ def show_recommendation_card(
             ft.Container(
                 content=ft.ListTile(
                     leading=ft.Icon(icon, color=icon_color, size=30),
-                    title=ft.Text(title, weight=ft.FontWeight.BOLD),
-                    subtitle=ft.Text(subtitle),
+                    title=highlighted_item_text(
+                        title,
+                        item_name,
+                        icon_color,
+                        base_weight=ft.FontWeight.BOLD,
+                    ),
+                    subtitle=highlighted_item_text(
+                        subtitle,
+                        item_name,
+                        icon_color,
+                    ),
                 ),
-                expand=True, 
+                expand=True,
                 padding=ft.Padding(top=5, bottom=5, left=0, right=0)
             ),
 
@@ -34,94 +130,112 @@ def show_recommendation_card(
                 alignment=ft.Alignment(0, 0)
             )
         ],
-        vertical_alignment=ft.CrossAxisAlignment.CENTER 
+        vertical_alignment=ft.CrossAxisAlignment.CENTER
     )
 
-    return ft.Card(
-        content=ft.Container(
-            content=card_content,
-            width=380, 
-            padding=5, 
-            bgcolor=bg_color, 
-            border_radius=12
-        )
+    return ft.Container(
+        key=f"container_{card_id}", # Links cleanly to p3_recommendations.py tracking loop
+        content=ft.Card(
+            content=ft.Container(
+                content=card_content,
+                width=380,
+                padding=5,
+                bgcolor=bg_color,
+                border_radius=12
+            )
+        ),
+        width=380,    # FIXED: Lock width to match your original card layout exactly
+        height=None,  # FIXED: Leave height fluid so card content doesn't compress or distort
+        opacity=1.0,
+        scale=1.0,
+        clip_behavior=ft.ClipBehavior.ANTI_ALIAS,  # FIXED: Eliminates the web shadow halo/blur effect
+
+        # FIXED: Converted to supported AnimationCurve enum attributes to eliminate the crash
+        animate_opacity=ft.Animation(250, ft.AnimationCurve.EASE_IN_OUT),
+        animate_scale=ft.Animation(300, ft.AnimationCurve.EASE_IN_BACK),
+        animate=ft.Animation(200, ft.AnimationCurve.EASE_OUT)
     )
 
+def format_recommendation(item_name: str, template_text: str, card_type: str):
+    body = template_text.replace("!ITEM!", item_name)
+    return recommendation_title(card_type, item_name), body
 
-def show_ask_card(item: str, subtitle: str):
+def show_ask_card(card_id: str, item: str, subtitle: str, on_feedback):
+    positive_label, negative_label = infer_feedback_labels("ask", subtitle)
     buttons = [
         ft.FilledButton(
-            content=ft.Text("Yes", max_lines=1, overflow=ft.TextOverflow.ELLIPSIS, text_align=ft.TextAlign.CENTER),
+            content=ft.Text(positive_label, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS, text_align=ft.TextAlign.CENTER),
             width=110, height=36,
-            style=ft.ButtonStyle(bgcolor=ft.Colors.BLUE_800, color=ft.Colors.WHITE)
+            style=ft.ButtonStyle(bgcolor=ft.Colors.BLUE_800, color=ft.Colors.WHITE),
+            on_click=lambda _: on_feedback(card_id, item, "ask", True)
         ),
         ft.OutlinedButton(
-            content=ft.Text("No", max_lines=1, overflow=ft.TextOverflow.ELLIPSIS, text_align=ft.TextAlign.CENTER),
-            width=110, height=36
+            content=ft.Text(negative_label, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS, text_align=ft.TextAlign.CENTER),
+            width=110, height=36,
+            on_click=lambda _: on_feedback(card_id, item, "ask", False)
         )
     ]
     return show_recommendation_card(
-        title="Log Reminder", 
-        subtitle=subtitle, 
-        icon=ft.Icons.HELP_OUTLINE, 
-        icon_color=ft.Colors.BLUE_800, 
-        bg_color="#EBF8FF", 
+        card_id=card_id,
+        title=recommendation_title("ask", item),
+        subtitle=subtitle,
+        item_name=item,
+        icon=ft.Icons.HELP_OUTLINE,
+        icon_color=ft.Colors.BLUE_800,
+        bg_color="#EBF8FF",
         action_buttons=buttons
     )
 
 
-def show_alert_card(item: str, subtitle: str):
+def show_alert_card(card_id: str, item: str, subtitle: str, on_feedback):
+    positive_label, negative_label = infer_feedback_labels("alert", subtitle)
     buttons = [
         ft.FilledButton(
-            content=ft.Text("Thanx", max_lines=1, overflow=ft.TextOverflow.ELLIPSIS, text_align=ft.TextAlign.CENTER),
+            content=ft.Text(positive_label, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS, text_align=ft.TextAlign.CENTER),
             width=110, height=36,
-            style=ft.ButtonStyle(bgcolor=ft.Colors.RED_700, color=ft.Colors.WHITE)
+            style=ft.ButtonStyle(bgcolor=ft.Colors.RED_700, color=ft.Colors.WHITE),
+            on_click=lambda _: on_feedback(card_id, item, "alert", True)
         ),
         ft.OutlinedButton(
-            content=ft.Text("No", max_lines=1, overflow=ft.TextOverflow.ELLIPSIS, text_align=ft.TextAlign.CENTER),
-            width=110, height=36
+            content=ft.Text(negative_label, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS, text_align=ft.TextAlign.CENTER),
+            width=110, height=36,
+            on_click=lambda _: on_feedback(card_id, item, "alert", False)
         )
     ]
     return show_recommendation_card(
-        title=f"Attention: {item.capitalize()}", 
-        subtitle=subtitle, 
-        icon=ft.Icons.WARNING_AMBER_ROUNDED, 
-        icon_color=ft.Colors.RED_700, 
-        bg_color="#FFF5F5", 
+        card_id=card_id,
+        title=recommendation_title("alert", item),
+        subtitle=subtitle,
+        item_name=item,
+        icon=ft.Icons.WARNING_AMBER_ROUNDED,
+        icon_color=ft.Colors.RED_700,
+        bg_color="#FFF5F5",
         action_buttons=buttons
     )
-\
-def show_tip_card(item: str, subtitle: str):
+
+
+def show_tip_card(card_id: str, item: str, subtitle: str, on_feedback):
+    positive_label, negative_label = infer_feedback_labels("tip", subtitle)
     buttons = [
         ft.FilledButton(
-            content=ft.Text(
-                "Useful",
-                max_lines=1,
-                overflow=ft.TextOverflow.ELLIPSIS,
-                text_align=ft.TextAlign.CENTER
-                ),
-
+            content=ft.Text(positive_label, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS, text_align=ft.TextAlign.CENTER),
             width=110, height=36,
-            style=ft.ButtonStyle(bgcolor=ft.Colors.AMBER_800, color=ft.Colors.WHITE)
+            style=ft.ButtonStyle(bgcolor=ft.Colors.AMBER_800, color=ft.Colors.WHITE),
+            on_click=lambda _: on_feedback(card_id, item, "tip", True)
         ),
-
         ft.OutlinedButton(
-            content=ft.Text(
-                "Nope",
-                max_lines=1,
-                overflow=ft.TextOverflow.ELLIPSIS,
-                text_align=ft.TextAlign.CENTER
-                ),
-
-            width=110, height=36
+            content=ft.Text(negative_label, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS, text_align=ft.TextAlign.CENTER),
+            width=110, height=36,
+            on_click=lambda _: on_feedback(card_id, item, "tip", False)
         )
     ]
-
     return show_recommendation_card(
-        title="Smart Tip", 
-        subtitle=subtitle, 
-        icon=ft.Icons.LIGHTBULB_OUTLINE, 
-        icon_color=ft.Colors.AMBER_800, 
-        bg_color="#FFFDF0", 
+        card_id=card_id,
+        title=recommendation_title("tip", item),
+        subtitle=subtitle,
+        item_name=item,
+        icon=ft.Icons.LIGHTBULB_OUTLINE,
+        icon_color=ft.Colors.AMBER_800,
+        bg_color="#FFFDF0",
         action_buttons=buttons
     )

@@ -1,5 +1,4 @@
 import sqlite3
-import uuid
 
 def log_purchased_item_local(user_id, household_id, item_name, quantity):
 
@@ -7,10 +6,10 @@ def log_purchased_item_local(user_id, household_id, item_name, quantity):
     c = conn.cursor()
 
     c.execute(
-        'INSERT INTO purchased_items (id, user_id, household_id, item_name, quantity) VALUES (?, ?, ?, ?, ?)',
-        (str(uuid.uuid4()), user_id, household_id, item_name, quantity)
+        'insert into purchased_items (household_id, item_name, quantity) values (?, ?, ?)',
+        (household_id, item_name, quantity)
     )
-    c.execute('UPDATE households SET modified = 1 WHERE id = ?', (household_id,))
+    c.execute('update households set modified = 1 where id = ?', (household_id,))
 
     conn.commit()
     conn.close()
@@ -21,10 +20,10 @@ def log_discarded_item_local(user_id, household_id, item_name, quantity_discarde
     c = conn.cursor()
 
     c.execute(
-        'INSERT INTO discarded_items (id, user_id, household_id, item_name, quantity_discarded) VALUES (?, ?, ?, ?, ?)',
-        (str(uuid.uuid4()), user_id, household_id, item_name, quantity_discarded)
+        'insert into discarded_items (household_id, item_name, quantity_discarded) values (?, ?, ?)',
+        (household_id, item_name, quantity_discarded)
     )
-    c.execute('UPDATE households SET modified = 1 WHERE id = ?', (household_id,))
+    c.execute('update households set modified = 1 where id = ?', (household_id,))
 
     conn.commit()
     conn.close()

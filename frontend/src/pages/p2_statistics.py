@@ -1,4 +1,5 @@
 import math
+import time
 import flet as ft
 import flet.canvas as cv
 from components.reuseable_ui_elements import show_header, stat_row, show_big_round_button
@@ -63,8 +64,16 @@ def StatisticsPage(session):
     )
 
     showing_pie = False
+    is_refreshing = False
+    last_pull_refresh_at = 0.0
 
     toggle_stats_btn = show_big_round_button(ft.Icons.PIE_CHART, ft.Colors.BLUE_800)
+
+    def set_toggle_button_state():
+        next_icon = ft.Icons.BAR_CHART_ROUNDED if showing_pie else ft.Icons.PIE_CHART
+        next_color = ft.Colors.ORANGE_400 if showing_pie else ft.Colors.BLUE_800
+        toggle_stats_btn.content = ft.Icon(next_icon, size=24, color=ft.Colors.WHITE)
+        toggle_stats_btn.style.bgcolor = next_color
 
     stat_bars_column = ft.Column(
         controls=[],
@@ -73,31 +82,74 @@ def StatisticsPage(session):
     )
 
     pie_canvas_container = ft.Container(height=260, alignment=ft.Alignment.CENTER)
-    legend_column = ft.Column(controls=[], spacing=6, horizontal_alignment=ft.CrossAxisAlignment.START)
-    pie_view = ft.Column([pie_canvas_container, legend_column], spacing=12)
+    legend_column = ft.Column(
+        controls=[],
+        spacing=6,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+    )
+    pie_view = ft.Column(
+        [pie_canvas_container, legend_column],
+        spacing=12,
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+    )
 
     view_container = ft.Container(
         content=stat_bars_column,
-        expand=True,
         padding=20,
-        clip_behavior=ft.ClipBehavior.HARD_EDGE
+    )
+
+    pull_refresh_indicator = ft.Container(
+        content=ft.Row(
+            [
+                ft.Icon(ft.Icons.REFRESH, size=18, color=ft.Colors.BLUE_800),
+                ft.Text("Refreshing", size=12, color=ft.Colors.BLUE_800, weight=ft.FontWeight.W_600),
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=6,
+        ),
+        height=32,
+        visible=False,
     )
 
     def toggle_statistics(_):
         nonlocal showing_pie
         showing_pie = not showing_pie
         view_container.content = pie_view if showing_pie else stat_bars_column
-        toggle_stats_btn.style.bgcolor = ft.Colors.ORANGE_400 if showing_pie else ft.Colors.BLUE_800
+        set_toggle_button_state()
         toggle_stats_btn.update()
         view_container.update()
 
     toggle_stats_btn.on_click = toggle_statistics
 
+    def refresh_statistics():
+        load_data()
+        view_container.update()
+
+    def handle_pull_to_refresh(e):
+        nonlocal is_refreshing, last_pull_refresh_at
+
+        if is_refreshing:
+            return
+
+        overscroll = abs(e.overscroll or 0)
+        at_top = e.pixels <= e.min_scroll_extent + 1
+        now = time.monotonic()
+
+        if at_top and overscroll > 70 and now - last_pull_refresh_at > 1.5:
+            is_refreshing = True
+            last_pull_refresh_at = now
+            pull_refresh_indicator.visible = True
+            pull_refresh_indicator.update()
+            refresh_statistics()
+            pull_refresh_indicator.visible = False
+            pull_refresh_indicator.update()
+            is_refreshing = False
+
     floating_action_layout = ft.Row(
-        [ft.Column([toggle_stats_btn], alignment=ft.MainAxisAlignment.END, horizontal_alignment=ft.CrossAxisAlignment.END)],
+        [toggle_stats_btn],
         alignment=ft.MainAxisAlignment.END,
-        vertical_alignment=ft.MainAxisAlignment.END,
-        expand=True
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
     )
 
     def load_data():
@@ -122,32 +174,33 @@ def StatisticsPage(session):
         pie_canvas_container.content = build_pie_canvas(data)
 
         legend_column.controls = [
-            ft.Row([
-                ft.Container(width=14, height=14, bgcolor=PIE_COLORS[i % len(PIE_COLORS)], border_radius=3),
-                ft.Text(f"{item['item_name']} – {int(item['portion'] * 100)}%", size=13),
-            ], spacing=8)
+            ft.Row(
+                [
+                    ft.Container(width=14, height=14, bgcolor=PIE_COLORS[i % len(PIE_COLORS)], border_radius=3),
+                    ft.Text(f"{item['item_name']} - {int(item['portion'] * 100)}%", size=13),
+                ],
+                spacing=8,
+                alignment=ft.MainAxisAlignment.CENTER,
+            )
             for i, item in enumerate(data)
         ]
-
-        stat_bars_column.update()
-        if showing_pie:
-            pie_canvas_container.update()
-            legend_column.update()
 
     content = ft.Column(
         [
             header,
+            pull_refresh_indicator,
             ft.Container(
                 content=floating_action_layout,
-                padding=ft.Padding(top=0, bottom=20, left=0, right=20),
-                height=100
+                padding=ft.Padding(top=0, bottom=12, left=0, right=20),
+                height=76,
             ),
             view_container,
         ],
         horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
         spacing=0,
         expand=True,
-        scroll=ft.ScrollMode.AUTO
+        scroll=ft.ScrollMode.AUTO,
+        on_scroll=handle_pull_to_refresh,
     )
 
     return content, load_data
