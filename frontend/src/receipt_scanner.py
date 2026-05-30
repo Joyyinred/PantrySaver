@@ -1,4 +1,3 @@
-import math
 import re
 import shutil
 import subprocess
@@ -34,6 +33,11 @@ SWEDISH_TO_ENGLISH = {
     "kondenserad mjölk": "condensed milk",
     "cola sockerfri": "sugar-free cola",
     "emd brau": "beer",
+    "ewp brau": "beer",
+    "poraris sor": "sweet potato",
+    "potatis sor": "sweet potato",
+    "ruccuen": "chewing gum",
+    "tugcuen": "chewing gum",
 }
 
 
@@ -67,6 +71,9 @@ SKIP_PATTERNS = [
     r"^butik\b",
     r"^ref\b",
     r"^tvr\b",
+    r"^vr\b",
+    r"^mind\b",
+    r"^sind\b",
     r"^kontakt",
     r"^moms",
     r"^spara",
@@ -81,6 +88,28 @@ SKIP_PATTERNS = [
     r"^202\d",
     r"^\d+$",
 ]
+
+
+SIMPLE_GROCERY_WORDS = {
+    "apple",
+    "banana",
+    "bread",
+    "cake",
+    "candy",
+    "carrot",
+    "carrots",
+    "cheese",
+    "chicken",
+    "fish",
+    "meat",
+    "milk",
+    "pie",
+    "potato",
+    "potatoes",
+    "tomato",
+    "tomatoes",
+    "yogurt",
+}
 
 
 def scan_receipt_file(file_path: str) -> tuple[str, list[dict]]:
@@ -158,6 +187,13 @@ def parse_receipt_text(text: str) -> list[dict]:
             pending_name = None
             continue
 
+        item = parse_simple_item_line(line)
+        if item:
+            items.append(item)
+            pending_item = item
+            pending_name = None
+            continue
+
         detail = parse_quantity_detail(line)
         if detail and (pending_item or pending_name):
             target_item = pending_item
@@ -191,7 +227,7 @@ def clean_line(line: str) -> str:
 
 
 def should_skip_line(line: str) -> bool:
-    lowered = line.lower()
+    lowered = re.sub(r"^[^a-zåäö0-9]+", "", line.lower()).strip()
     if not re.search(r"[a-zåäö]", lowered):
         return True
     return any(re.search(pattern, lowered) for pattern in SKIP_PATTERNS)
@@ -264,6 +300,103 @@ def parse_item_line(line: str) -> dict | None:
         "quantity": quantity,
         "source_text": line,
     }
+
+
+def parse_simple_item_line(line: str) -> dict | None:
+    lowered = line.lower().strip()
+
+    if re.search(r"\d+,\d{2}", lowered):
+        return None
+
+    if count_numbers(lowered) > 3:
+        return None
+
+    name = None
+    quantity = None
+    divider_match = re.match(r"^(.+?)\s*\|+\s*(\d+(?:[.,]\d+)?)(?:\s+.*)?$", lowered)
+    if divider_match:
+        name = clean_simple_name(divider_match.group(1))
+        quantity = parse_decimal(divider_match.group(2))
+
+    if name is None:
+        match = re.match(r"^(.+?)\s*[:=-]\s*(\d+(?:[.,]\d+)?)\s*(?:pcs?|st)?$", lowered)
+        if match:
+            name = clean_simple_name(match.group(1))
+            quantity = parse_decimal(match.group(2))
+        else:
+            match = re.match(r"^(.+?)\s+(\d+(?:[.,]\d+)?)(?:\s+\D.*|\s+\d.*)?$", lowered)
+            if match:
+                name = clean_simple_name(match.group(1))
+                quantity = parse_decimal(match.group(2))
+
+    if name is None:
+        fallback = re.match(r"^([a-zåäö][a-zåäö ]{2,})\s+(?:pcs?|ps|st|x)$", lowered)
+        if fallback:
+            name = clean_simple_name(fallback.group(1))
+            quantity = 1.0
+
+    if name is None:
+        fallback = re.match(r"^([a-zåäö][a-zåäö ]{2,})\s+[a-z]$", lowered)
+        if fallback and normalize_name(fallback.group(1)) in SIMPLE_GROCERY_WORDS:
+            name = clean_simple_name(fallback.group(1))
+            quantity = 1.0
+
+    if name is None and normalize_name(lowered) in SIMPLE_GROCERY_WORDS:
+        name = clean_simple_name(lowered)
+        quantity = 1.0
+
+    if name is None or quantity is None:
+        return None
+
+    if quantity <= 0 or quantity > 100:
+        return None
+
+    if not looks_like_simple_item_name(name):
+        return None
+
+    translated_name = translate_item_name(name)
+    return {
+        "item_name": translated_name,
+        "quantity": quantity,
+        "source_text": line,
+    }
+
+
+def clean_simple_name(name: str) -> str:
+    name = re.sub(r"\|+", " ", name)
+    name = re.sub(r"\b(item|tem|pcs?|ps|st|ial|ia)\b", "", name, flags=re.IGNORECASE)
+    name = re.sub(r"[^a-zåäöA-ZÅÄÖ& ]+", " ", name)
+    name = re.sub(r"\s+", " ", name).strip()
+    return name
+
+
+def looks_like_simple_item_name(name: str) -> bool:
+    normalized = normalize_name(name)
+
+    if len(normalized) < 3:
+        return False
+
+    if should_skip_line(normalized):
+        return False
+
+    blocked_words = {
+        "edit",
+        "names",
+        "quantities",
+        "saving",
+        "before",
+        "review",
+        "receipt",
+        "total",
+    }
+    if normalized in blocked_words:
+        return False
+
+    return bool(re.search(r"[a-zåäö]{3,}", normalized))
+
+
+def count_numbers(value: str) -> int:
+    return len(re.findall(r"\d+(?:[.,]\d+)?", value))
 
 
 def make_item(name: str, source_text: str) -> dict:
