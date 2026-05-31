@@ -12,6 +12,7 @@ from api.supabase_db import (
 from database import log_purchased_item_local, log_discarded_item_local
 from receipt_scanner import scan_receipt_or_list_file
 
+
 def LogFoodPage(session, page: ft.Page):
 
     file_picker = getattr(page, "_pantry_file_picker", None)
@@ -187,8 +188,6 @@ def LogFoodPage(session, page: ft.Page):
 
             open_receipt_review_dialog(receipt_items)
 
-
-    # Manual Logging Logic
     def handle_log(item_name, quantity, is_purchase):
 
         try:
@@ -490,8 +489,8 @@ def LogFoodPage(session, page: ft.Page):
                 page.update()
 
         dialog = ft.AlertDialog(
-            title = ft.Text('Log Purchase' if is_purchased else 'Log Discard'),
-            content = ft.Container(
+            title=ft.Text('Log Purchase' if is_purchased else 'Log Discard'),
+            content=ft.Container(
                 width=360,
                 content=ft.Column(
                     [
@@ -505,7 +504,7 @@ def LogFoodPage(session, page: ft.Page):
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 ),
             ),
-            actions = [
+            actions=[
                 ft.TextButton('Cancel', on_click=lambda _: setattr(dialog, 'open', False) or page.update()),
                 ft.TextButton('Log', on_click=on_submit)
             ]

@@ -158,7 +158,6 @@ def SignupSetupPage(auth_result, on_setup_complete):
             save_user_with_household(household)
             clear_join_code(access_token, household_id)
 
-
         except Exception as ex:
 
             message_text.value = f"Failed to join household= {ex}"

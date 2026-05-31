@@ -135,9 +135,13 @@ def RecommendationPage(session, page: ft.Page):
                 card_container.controls.append(card)
 
             page.update()
-        except Exception as e:
-            print(f"Error rendering remote cards: {e}")
-            show_message("Failed to sync recommendations from Supabase.", ft.Colors.RED_400)
+
+        except Exception as error:
+            print(f"Error rendering remote cards: {error}")
+            show_message(
+                "Failed to sync recommendations from Supabase.",
+                ft.Colors.RED_400,
+            )
 
     def handle_pull_to_refresh(e):
         nonlocal is_refreshing, last_pull_refresh_at

@@ -218,6 +218,80 @@ def apply_alert_feedback_decay(
     return adjusted_weights
 
 
+def get_negative_feedback_cooldowns(
+    household_id: str,
+    cooldown_days: int,
+) -> dict[tuple[str, str], int]:
+    try:
+        response = (
+            supabase.table("recommendations")
+            .select("item_name,type,responded_at")
+            .eq("household_id", household_id)
+            .eq("feedback", 0)
+            .order("responded_at", desc=True)
+            .execute()
+        )
+    except Exception as e:
+        print(
+            "could not fetch recommendation cooldowns "
+            f"(worker.get_negative_feedback_cooldowns): {e}"
+        )
+        return {}
+
+    now = datetime.now(timezone.utc)
+    cooldowns = {}
+
+    for row in response.data or []:
+        item_key = algorithm.normalize_item_name(row.get("item_name"))
+        card_type = (row.get("type") or "").strip().lower()
+        responded_at = parse_responded_at(row.get("responded_at"))
+
+        if not item_key or not card_type or not responded_at:
+            continue
+
+        cooldown_key = (item_key, card_type)
+        if cooldown_key in cooldowns:
+            continue
+
+        days_since_feedback = (now - responded_at).days
+        if days_since_feedback < cooldown_days:
+            cooldowns[cooldown_key] = days_since_feedback
+
+    return cooldowns
+
+
+def should_skip_for_negative_cooldown(
+    plan: algorithm.RecommendationPlan,
+    cooldowns: dict[tuple[str, str], int],
+) -> bool:
+    cooldown_key = (
+        algorithm.normalize_item_name(plan.item_name),
+        plan.card_type,
+    )
+
+    if cooldown_key not in cooldowns:
+        return False
+
+    strong_alert = (
+        plan.card_type == "alert"
+        and plan.template_key == "high_waste_risk"
+        and plan.score >= 1.8
+    )
+    if strong_alert:
+        print(
+            f"keeping urgent alert for {plan.item_name} despite recent "
+            "negative feedback"
+        )
+        return False
+
+    days_since_feedback = cooldowns[cooldown_key]
+    print(
+        f"skipping {plan.card_type}/{plan.item_name}: negative feedback "
+        f"{days_since_feedback} day(s) ago is still cooling down"
+    )
+    return True
+
+
 def get_item_categories() -> dict[str, str]:
     try:
         category_response = (
@@ -494,6 +568,10 @@ def process_household(
         longterm_change_in_days=longterm_change_in_days,
     )
     item_categories = get_item_categories()
+    cooldowns = get_negative_feedback_cooldowns(
+        household_id,
+        shortterm_change_in_days,
+    )
     grouped_items = group_logged_items_by_name(purchased, discarded)
     plans = []
 
@@ -526,6 +604,9 @@ def process_household(
             shortterm_change_in_days=shortterm_change_in_days,
             longterm_change_in_days=longterm_change_in_days,
         )
+
+        if plan and should_skip_for_negative_cooldown(plan, cooldowns):
+            continue
 
         if plan:
             plans.append(plan)

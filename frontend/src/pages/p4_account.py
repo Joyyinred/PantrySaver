@@ -3,6 +3,7 @@ import flet as ft
 from components.reuseable_ui_elements import show_big_round_button, show_header
 from api.supabase_db import generate_join_code
 
+
 def AccountPage(on_logout_click, user_profile=None, household=None):
 
     first_name = ""
@@ -21,7 +22,6 @@ def AccountPage(on_logout_click, user_profile=None, household=None):
 
     if household:
         household_name = household.get("name") or "No household"
-        household_id = household.get("Id") or "No household"
 
     header = show_header(
         title="My Account",
@@ -52,8 +52,8 @@ def AccountPage(on_logout_click, user_profile=None, household=None):
             await asyncio.sleep(10)
             code_display.opacity = 0
             code_display.update()
-        except Exception as e:
-            print (f' "Error when generating code: " , {e}')
+        except Exception:
+            print("Error when generating code")
 
     logout_btn = show_big_round_button(ft.Icons.LOGOUT, ft.Colors.RED_700)
     logout_btn.on_click = on_logout_click

@@ -58,7 +58,6 @@ def LoginPage(on_login_click, on_signup_click):
                 result = login(email, password)
                 on_login_click(result)
 
-
         except Exception as ex:
             error_text = str(ex).lower()
 
@@ -79,7 +78,7 @@ def LoginPage(on_login_click, on_signup_click):
         width=300,
         height=50,
         style=ft.ButtonStyle(bgcolor=ft.Colors.BLUE_800),
-        on_click=submit_auth # change this to really use supabase
+        on_click=submit_auth
     )
 
     def toggle_mode(e):
@@ -119,7 +118,7 @@ def LoginPage(on_login_click, on_signup_click):
                         confirm_password_input,
                         login_button,
                         signup_container,
-                        message_text, # add error message
+                        message_text,
                     ],
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                     alignment=ft.MainAxisAlignment.CENTER,
