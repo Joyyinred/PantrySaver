@@ -74,7 +74,7 @@ def infer_feedback_labels(card_type: str, subtitle: str) -> tuple[str, str]:
         if "forgot" in text or "forget" in text or "log" in text:
             return "Bought", "No"
         if "still" in text and "inventory" in text:
-            return "Still have", "Gone"
+            return "I do", "Gone"
         return "Yes", "No"
 
     if "donate" in text:
@@ -122,7 +122,7 @@ def show_recommendation_card(
     action_buttons: list
 ):
     button_container = ft.Column(
-        controls=action_buttons,  # Kept exactly as your original code
+        controls=action_buttons,
         spacing=8,
         alignment=ft.MainAxisAlignment.CENTER,
         horizontal_alignment=ft.CrossAxisAlignment.CENTER
@@ -161,7 +161,7 @@ def show_recommendation_card(
     )
 
     return ft.Container(
-        key=f"container_{card_id}", # Links cleanly to p3_recommendations.py tracking loop
+        key=f"container_{card_id}",
         content=ft.Card(
             content=ft.Container(
                 content=card_content,
@@ -171,13 +171,12 @@ def show_recommendation_card(
                 border_radius=12
             )
         ),
-        width=380,    # FIXED: Lock width to match your original card layout exactly
-        height=None,  # FIXED: Leave height fluid so card content doesn't compress or distort
+        width=380,
+        height=None,
         opacity=1.0,
         scale=1.0,
-        clip_behavior=ft.ClipBehavior.ANTI_ALIAS,  # FIXED: Eliminates the web shadow halo/blur effect
+        clip_behavior=ft.ClipBehavior.ANTI_ALIAS,
 
-        # FIXED: Converted to supported AnimationCurve enum attributes to eliminate the crash
         animate_opacity=ft.Animation(250, ft.AnimationCurve.EASE_IN_OUT),
         animate_scale=ft.Animation(300, ft.AnimationCurve.EASE_IN_BACK),
         animate=ft.Animation(200, ft.AnimationCurve.EASE_OUT)
