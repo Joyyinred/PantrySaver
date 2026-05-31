@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 
 
-SWEDISH_TO_ENGLISH = {
+swedish_to_english = {
     "gronkalsbiff": "kale patty",
     "grönkålsbiff": "kale patty",
     "hamburgerbrod": "hamburger bread",
@@ -41,7 +41,7 @@ SWEDISH_TO_ENGLISH = {
 }
 
 
-AVERAGE_GRAMS_PER_ITEM = {
+average_grams_per_item = {
     "tomato": 120,
     "carrot": 75,
     "potato": 170,
@@ -57,7 +57,7 @@ AVERAGE_GRAMS_PER_ITEM = {
 }
 
 
-SKIP_PATTERNS = [
+skip_patterns = [
     r"^willys\b",
     r"^tel\b",
     r"^org\b",
@@ -90,7 +90,7 @@ SKIP_PATTERNS = [
 ]
 
 
-SIMPLE_GROCERY_WORDS = {
+simple_grocery_words = {
     "apple",
     "banana",
     "bread",
@@ -112,12 +112,12 @@ SIMPLE_GROCERY_WORDS = {
 }
 
 
-def scan_receipt_file(file_path: str) -> tuple[str, list[dict]]:
-    text = extract_receipt_text(file_path)
-    return text, parse_receipt_text(text)
+def scan_receipt_or_list_file(file_path: str) -> tuple[str, list[dict]]:
+    text = extract_text_from_receipt_file(file_path)
+    return text, parse_scanned_receipt_or_list_text(text)
 
 
-def extract_receipt_text(file_path: str) -> str:
+def extract_text_from_receipt_file(file_path: str) -> str:
     path = Path(file_path)
 
     if not path.exists():
@@ -127,13 +127,13 @@ def extract_receipt_text(file_path: str) -> str:
         raise RuntimeError("Tesseract is not installed on this machine.")
 
     if path.suffix.lower() == ".pdf":
-        image_path = render_pdf_to_image(path)
-        return run_tesseract(image_path)
+        image_path = render_receipt_pdf_to_image(path)
+        return run_image_ocr(image_path)
 
-    return run_tesseract(path)
+    return run_image_ocr(path)
 
 
-def render_pdf_to_image(pdf_path: Path) -> Path:
+def render_receipt_pdf_to_image(pdf_path: Path) -> Path:
     if not shutil.which("qlmanage"):
         raise RuntimeError("PDF receipt scanning requires qlmanage on this machine.")
 
@@ -160,7 +160,7 @@ def render_pdf_to_image(pdf_path: Path) -> Path:
     return image_path
 
 
-def run_tesseract(image_path: Path) -> str:
+def run_image_ocr(image_path: Path) -> str:
     result = subprocess.run(
         ["tesseract", str(image_path), "stdout", "-l", "eng", "--psm", "6"],
         check=True,
@@ -170,7 +170,7 @@ def run_tesseract(image_path: Path) -> str:
     return result.stdout
 
 
-def parse_receipt_text(text: str) -> list[dict]:
+def parse_scanned_receipt_or_list_text(text: str) -> list[dict]:
     items = []
     pending_item = None
     pending_name = None
@@ -180,14 +180,14 @@ def parse_receipt_text(text: str) -> list[dict]:
         if not line or should_skip_line(line):
             continue
 
-        item = parse_item_line(line)
+        item = parse_willys_receipt_item_line(line)
         if item:
             items.append(item)
             pending_item = item
             pending_name = None
             continue
 
-        item = parse_simple_item_line(line)
+        item = parse_simple_list_item_line(line)
         if item:
             items.append(item)
             pending_item = item
@@ -230,7 +230,7 @@ def should_skip_line(line: str) -> bool:
     lowered = re.sub(r"^[^a-zåäö0-9]+", "", line.lower()).strip()
     if not re.search(r"[a-zåäö]", lowered):
         return True
-    return any(re.search(pattern, lowered) for pattern in SKIP_PATTERNS)
+    return any(re.search(pattern, lowered) for pattern in skip_patterns)
 
 
 def parse_quantity_detail(line: str) -> dict | None:
@@ -251,7 +251,7 @@ def parse_quantity_detail(line: str) -> dict | None:
     return None
 
 
-def parse_item_line(line: str) -> dict | None:
+def parse_willys_receipt_item_line(line: str) -> dict | None:
     if not re.search(r"\d+,\d{2}$", line):
         return None
 
@@ -302,7 +302,7 @@ def parse_item_line(line: str) -> dict | None:
     }
 
 
-def parse_simple_item_line(line: str) -> dict | None:
+def parse_simple_list_item_line(line: str) -> dict | None:
     lowered = line.lower().strip()
 
     if re.search(r"\d+,\d{2}", lowered):
@@ -315,34 +315,34 @@ def parse_simple_item_line(line: str) -> dict | None:
     quantity = None
     divider_match = re.match(r"^(.+?)\s*\|+\s*(\d+(?:[.,]\d+)?)(?:\s+.*)?$", lowered)
     if divider_match:
-        name = clean_simple_name(divider_match.group(1))
+        name = clean_simple_list_name(divider_match.group(1))
         quantity = parse_decimal(divider_match.group(2))
 
     if name is None:
         match = re.match(r"^(.+?)\s*[:=-]\s*(\d+(?:[.,]\d+)?)\s*(?:pcs?|st)?$", lowered)
         if match:
-            name = clean_simple_name(match.group(1))
+            name = clean_simple_list_name(match.group(1))
             quantity = parse_decimal(match.group(2))
         else:
             match = re.match(r"^(.+?)\s+(\d+(?:[.,]\d+)?)(?:\s+\D.*|\s+\d.*)?$", lowered)
             if match:
-                name = clean_simple_name(match.group(1))
+                name = clean_simple_list_name(match.group(1))
                 quantity = parse_decimal(match.group(2))
 
     if name is None:
         fallback = re.match(r"^([a-zåäö][a-zåäö ]{2,})\s+(?:pcs?|ps|st|x)$", lowered)
         if fallback:
-            name = clean_simple_name(fallback.group(1))
+            name = clean_simple_list_name(fallback.group(1))
             quantity = 1.0
 
     if name is None:
         fallback = re.match(r"^([a-zåäö][a-zåäö ]{2,})\s+[a-z]$", lowered)
-        if fallback and normalize_name(fallback.group(1)) in SIMPLE_GROCERY_WORDS:
-            name = clean_simple_name(fallback.group(1))
+        if fallback and normalize_name(fallback.group(1)) in simple_grocery_words:
+            name = clean_simple_list_name(fallback.group(1))
             quantity = 1.0
 
-    if name is None and normalize_name(lowered) in SIMPLE_GROCERY_WORDS:
-        name = clean_simple_name(lowered)
+    if name is None and normalize_name(lowered) in simple_grocery_words:
+        name = clean_simple_list_name(lowered)
         quantity = 1.0
 
     if name is None or quantity is None:
@@ -351,7 +351,7 @@ def parse_simple_item_line(line: str) -> dict | None:
     if quantity <= 0 or quantity > 100:
         return None
 
-    if not looks_like_simple_item_name(name):
+    if not looks_like_simple_list_item_name(name):
         return None
 
     translated_name = translate_item_name(name)
@@ -362,7 +362,7 @@ def parse_simple_item_line(line: str) -> dict | None:
     }
 
 
-def clean_simple_name(name: str) -> str:
+def clean_simple_list_name(name: str) -> str:
     name = re.sub(r"\|+", " ", name)
     name = re.sub(r"\b(item|tem|pcs?|ps|st|ial|ia)\b", "", name, flags=re.IGNORECASE)
     name = re.sub(r"[^a-zåäöA-ZÅÄÖ& ]+", " ", name)
@@ -370,7 +370,7 @@ def clean_simple_name(name: str) -> str:
     return name
 
 
-def looks_like_simple_item_name(name: str) -> bool:
+def looks_like_simple_list_item_name(name: str) -> bool:
     normalized = normalize_name(name)
 
     if len(normalized) < 3:
@@ -422,10 +422,10 @@ def looks_like_item_name(line: str) -> bool:
 def translate_item_name(name: str) -> str:
     normalized = normalize_name(name)
 
-    if normalized in SWEDISH_TO_ENGLISH:
-        return SWEDISH_TO_ENGLISH[normalized]
+    if normalized in swedish_to_english:
+        return swedish_to_english[normalized]
 
-    for swedish, english in SWEDISH_TO_ENGLISH.items():
+    for swedish, english in swedish_to_english.items():
         if normalized.startswith(swedish):
             return english
 
@@ -449,7 +449,7 @@ def estimate_piece_quantity(
     if explicit_count:
         return float(explicit_count)
 
-    item_weight = AVERAGE_GRAMS_PER_ITEM.get(item_name)
+    item_weight = average_grams_per_item.get(item_name)
     total_grams = None
 
     if kg:

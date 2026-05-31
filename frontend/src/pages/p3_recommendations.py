@@ -20,7 +20,7 @@ def RecommendationPage(session, page: ft.Page):
 
     header = show_header(
         title="Recommendations",
-        subtitle="Adaptive suggestions based on your household waste patterns.",
+        subtitle="Helpful ideas based on what your household logs.",
     )
 
     card_container = ft.Column(

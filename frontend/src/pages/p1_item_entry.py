@@ -10,7 +10,7 @@ from api.supabase_db import (
     mark_household_modified,
 )
 from database import log_purchased_item_local, log_discarded_item_local
-from receipt_scanner import scan_receipt_file
+from receipt_scanner import scan_receipt_or_list_file
 
 def LogFoodPage(session, page: ft.Page):
 
@@ -168,7 +168,7 @@ def LogFoodPage(session, page: ft.Page):
                 return
 
             try:
-                _, receipt_items = scan_receipt_file(selected_path)
+                _, receipt_items = scan_receipt_or_list_file(selected_path)
             except Exception as e:
                 print(f"Receipt scan failed: {e}")
                 page.snack_bar = ft.SnackBar(ft.Text("Could not scan the receipt on this device."))
@@ -237,16 +237,26 @@ def LogFoodPage(session, page: ft.Page):
 
     def open_receipt_review_dialog(receipt_items):
         row_controls = []
-        rows_column = ft.Column(spacing=8, scroll=ft.ScrollMode.AUTO, height=350)
+        rows_column = ft.Column(spacing=10, scroll=ft.ScrollMode.AUTO, height=350)
 
         def add_editable_row(item_name="", quantity=1):
-            name_input = ft.TextField(label="Item", value=item_name, width=190, dense=True)
+            field_border_color = ft.Colors.BLUE_GREY_100
+            name_input = ft.TextField(
+                label="Item",
+                value=item_name,
+                dense=True,
+                expand=True,
+                border_color=field_border_color,
+                focused_border_color=ft.Colors.BLUE_300,
+            )
             qty_input = ft.TextField(
                 label="Pcs",
                 value=str(int(quantity) if float(quantity).is_integer() else quantity),
-                width=74,
+                width=56,
                 dense=True,
                 keyboard_type=ft.KeyboardType.NUMBER,
+                border_color=field_border_color,
+                focused_border_color=ft.Colors.BLUE_300,
             )
             row_container = ft.Container()
 
@@ -261,13 +271,16 @@ def LogFoodPage(session, page: ft.Page):
                     ft.IconButton(
                         icon=ft.Icons.DELETE_OUTLINE,
                         icon_color=ft.Colors.RED_700,
+                        icon_size=20,
                         tooltip="Remove row",
                         on_click=remove_row,
                     ),
                 ],
+                spacing=8,
                 alignment=ft.MainAxisAlignment.CENTER,
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
             )
+            row_container.padding = ft.Padding(top=4, bottom=6, left=0, right=0)
             rows_column.controls.append(row_container)
             row_controls.append(
                 {
@@ -317,7 +330,7 @@ def LogFoodPage(session, page: ft.Page):
             modal=True,
             title=ft.Text("Review receipt items"),
             content=ft.Container(
-                width=380,
+                width=360,
                 height=430,
                 content=ft.Column(
                     [
@@ -348,8 +361,19 @@ def LogFoodPage(session, page: ft.Page):
 
     def open_log_dialog(is_purchased):
 
-        name_input = ft.TextField(label='Item Name')
-        qty_input = ft.TextField(label='Quantity', value="1", keyboard_type=ft.KeyboardType.NUMBER)
+        field_border_color = ft.Colors.BLUE_GREY_100
+        name_input = ft.TextField(
+            label='Item Name',
+            border_color=field_border_color,
+            focused_border_color=ft.Colors.BLUE_300,
+        )
+        qty_input = ft.TextField(
+            label='Quantity',
+            value="1",
+            keyboard_type=ft.KeyboardType.NUMBER,
+            border_color=field_border_color,
+            focused_border_color=ft.Colors.BLUE_300,
+        )
         item_suggestions = ft.Column(spacing=8, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
         quantity_suggestions = ft.Column(spacing=8, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
 

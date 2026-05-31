@@ -35,7 +35,14 @@ def main(page: ft.Page):
         ),
     )
 
-    statistics_content, load_statistics = StatisticsPage(session)
+    statistics_content, load_statistics = StatisticsPage(session, page)
+
+    def handle_platform_brightness_change(_=None):
+        if session.get("selected_tab_index") == 1:
+            load_statistics()
+            page.update()
+
+    page.on_platform_brightness_change = handle_platform_brightness_change
 
     app_tab_content_area = ft.Container(
         content=LogFoodPage(session, page),
@@ -47,7 +54,7 @@ def main(page: ft.Page):
     def show_main_app():
         session["selected_tab_index"] = 0
         app_tab_content_area.content = LogFoodPage(session, page)
-        update_nav_bar()
+        nav_bar.selected_index = 0
         main_container.content = log_food_screen
         page.update()
 
@@ -129,7 +136,7 @@ def main(page: ft.Page):
         email_field.value = ""
         password_field.value = ""
         session["selected_tab_index"] = 0
-        update_nav_bar()
+        nav_bar.selected_index = 0
         main_container.content = login_form
         page.update()
 
@@ -153,7 +160,12 @@ def main(page: ft.Page):
     )
 
     def switch_to_tab(selected):
+        if session["selected_tab_index"] == selected:
+            return
+
         session["selected_tab_index"] = selected
+        nav_bar.selected_index = selected
+        page.update()
 
         if selected == 0:
             app_tab_content_area.content = LogFoodPage(session, page)
@@ -168,78 +180,40 @@ def main(page: ft.Page):
                 household=session.get("household"),
             )
 
-        update_nav_bar()
         page.update()
         if selected == 1:
             load_statistics()
             page.update()
 
-    nav_items = [
-        (ft.Icons.ADD_BOX_OUTLINED, ft.Icons.ADD_BOX, "Log Food"),
-        (ft.Icons.BAR_CHART_OUTLINED, ft.Icons.BAR_CHART, "Stats"),
-        (ft.Icons.LIGHTBULB_OUTLINE, ft.Icons.LIGHTBULB, "Tips"),
-        (ft.Icons.PERSON_OUTLINE, ft.Icons.PERSON, "Account"),
-    ]
-    nav_row = ft.Row(
-        spacing=4,
-        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        vertical_alignment=ft.CrossAxisAlignment.CENTER,
-    )
-    nav_bar = ft.Container(
-        content=nav_row,
-        height=82,
-        padding=ft.Padding(top=8, right=10, bottom=10, left=10),
-        bgcolor=ft.Colors.WHITE,
-        border=ft.Border(top=ft.BorderSide(1, ft.Colors.BLUE_GREY_100)),
-    )
+    def on_nav_change(e):
+        switch_to_tab(e.control.selected_index)
 
-    def build_nav_item(index, outline_icon, selected_icon, label):
-        selected = session["selected_tab_index"] == index
-        color = ft.Colors.BLUE_800 if selected else ft.Colors.BLUE_GREY_500
-        bg_color = "#E8F2FF" if selected else ft.Colors.TRANSPARENT
-
-        return ft.Container(
-            content=ft.Container(
-                content=ft.Column(
-                    [
-                        ft.Icon(
-                            selected_icon if selected else outline_icon,
-                            size=24 if selected else 22,
-                            color=color,
-                        ),
-                        ft.Text(
-                            label,
-                            size=11,
-                            weight=ft.FontWeight.W_600 if selected else ft.FontWeight.W_500,
-                            color=color,
-                            max_lines=1,
-                            overflow=ft.TextOverflow.ELLIPSIS,
-                            text_align=ft.TextAlign.CENTER,
-                        ),
-                    ],
-                    spacing=2,
-                    alignment=ft.MainAxisAlignment.CENTER,
-                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                ),
-                width=82,
-                height=58,
-                padding=ft.Padding(top=6, right=4, bottom=5, left=4),
-                bgcolor=bg_color,
-                border_radius=22,
-                animate=ft.Animation(180, ft.AnimationCurve.EASE_OUT),
+    nav_bar = ft.NavigationBar(
+        selected_index=0,
+        on_change=on_nav_change,
+        destinations=[
+            ft.NavigationBarDestination(
+                icon=ft.Icons.ADD_BOX_OUTLINED,
+                selected_icon=ft.Icons.ADD_BOX,
+                label="Log Food",
             ),
-            expand=True,
-            alignment=ft.Alignment.CENTER,
-            on_click=lambda _, tab_index=index: switch_to_tab(tab_index),
-        )
-
-    def update_nav_bar():
-        nav_row.controls = [
-            build_nav_item(index, outline_icon, selected_icon, label)
-            for index, (outline_icon, selected_icon, label) in enumerate(nav_items)
-        ]
-
-    update_nav_bar()
+            ft.NavigationBarDestination(
+                icon=ft.Icons.BAR_CHART_OUTLINED,
+                selected_icon=ft.Icons.BAR_CHART,
+                label="Stats",
+            ),
+            ft.NavigationBarDestination(
+                icon=ft.Icons.LIGHTBULB_OUTLINE,
+                selected_icon=ft.Icons.LIGHTBULB,
+                label="Tips",
+            ),
+            ft.NavigationBarDestination(
+                icon=ft.Icons.PERSON_OUTLINE,
+                selected_icon=ft.Icons.PERSON,
+                label="Account",
+            ),
+        ],
+    )
 
     log_food_screen = ft.Column(
         [

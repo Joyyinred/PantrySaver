@@ -11,8 +11,7 @@ PIE_COLORS = [
     ft.Colors.PINK_400, ft.Colors.AMBER_400, ft.Colors.CYAN_400,
     ft.Colors.LIME_400,
 ]
-
-def build_pie_canvas(data, size=260):
+def build_pie_canvas(data, label_color, size=260):
     if not data:
         return ft.Container(height=size)
 
@@ -42,13 +41,13 @@ def build_pie_canvas(data, size=260):
             paint=ft.Paint(color=PIE_COLORS[i % len(PIE_COLORS)], style=ft.PaintingStyle.FILL)
         ))
 
-        if ratio > 0.05:
-            label_r = r * 0.65
+        if ratio >= 0.04:
+            label_r = r * 0.62
             shapes.append(cv.Text(
                 x=cx + label_r * math.cos(mid_angle),
                 y=cy + label_r * math.sin(mid_angle),
                 value=item["item_name"],
-                style=ft.TextStyle(size=11, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
+                style=ft.TextStyle(size=11, color=label_color, weight=ft.FontWeight.BOLD),
                 text_align=ft.TextAlign.CENTER,
             ))
 
@@ -57,7 +56,7 @@ def build_pie_canvas(data, size=260):
     return cv.Canvas(shapes=shapes, width=size, height=size)
 
 
-def StatisticsPage(session):
+def StatisticsPage(session, page: ft.Page):
     header = show_header(
         title="Statistics",
         subtitle="Your household waste distribution ratios:"
@@ -68,6 +67,13 @@ def StatisticsPage(session):
     last_pull_refresh_at = 0.0
 
     toggle_stats_btn = show_big_round_button(ft.Icons.PIE_CHART, ft.Colors.BLUE_800)
+
+    def pie_label_color():
+        return (
+            ft.Colors.BLUE_GREY_100
+            if page.platform_brightness == ft.Brightness.DARK
+            else ft.Colors.BLUE_GREY_900
+        )
 
     def set_toggle_button_state():
         next_icon = ft.Icons.BAR_CHART_ROUNDED if showing_pie else ft.Icons.PIE_CHART
@@ -171,7 +177,7 @@ def StatisticsPage(session):
             if item["ratio"] is not None
         ]
 
-        pie_canvas_container.content = build_pie_canvas(data)
+        pie_canvas_container.content = build_pie_canvas(data, pie_label_color())
 
         legend_column.controls = [
             ft.Row(

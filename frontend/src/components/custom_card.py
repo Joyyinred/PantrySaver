@@ -25,16 +25,17 @@ def highlighted_item_text(
     item_name: str,
     highlight_color: str,
     base_weight=None,
+    text_color=ft.Colors.BLUE_GREY_900,
 ):
     item = (item_name or "").strip()
     text = text or ""
 
     if not item:
-        return ft.Text(text, weight=base_weight)
+        return ft.Text(text, weight=base_weight, color=text_color)
 
     matches = list(re.finditer(re.escape(item), text, flags=re.IGNORECASE))
     if not matches:
-        return ft.Text(text, weight=base_weight)
+        return ft.Text(text, weight=base_weight, color=text_color)
 
     spans = []
     current_index = 0
@@ -45,45 +46,69 @@ def highlighted_item_text(
 
     for match in matches:
         if match.start() > current_index:
-            spans.append(ft.TextSpan(text[current_index:match.start()]))
+            spans.append(
+                ft.TextSpan(
+                    text[current_index:match.start()],
+                    style=ft.TextStyle(color=text_color),
+                )
+            )
 
         spans.append(ft.TextSpan(match.group(0), style=highlight_style))
         current_index = match.end()
 
     if current_index < len(text):
-        spans.append(ft.TextSpan(text[current_index:]))
+        spans.append(
+            ft.TextSpan(
+                text[current_index:],
+                style=ft.TextStyle(color=text_color),
+            )
+        )
 
-    return ft.Text(spans=spans, weight=base_weight)
+    return ft.Text(spans=spans, weight=base_weight, color=text_color)
 
 
 def infer_feedback_labels(card_type: str, subtitle: str) -> tuple[str, str]:
     text = (subtitle or "").lower()
 
     if card_type == "ask":
+        if "forgot" in text or "forget" in text or "log" in text:
+            return "Bought", "No"
+        if "still" in text and "inventory" in text:
+            return "Still have", "Gone"
         return "Yes", "No"
 
     if "donate" in text:
-        return "Used/donated", "Not now"
+        return "Done", "Later"
 
     if "process" in text:
-        return "Processed", "Not now"
+        return "Done", "Later"
 
     if "adding" in text or "add " in text:
-        return "I'll add it", "No thanks"
+        return "Add", "Skip"
 
     if "salad" in text or "meal" in text:
-        return "I'll make it", "Not today"
+        return "Try", "Skip"
 
     if "use" in text or "eat" in text:
-        return "I'll use it", "Not today"
+        return "Use", "Skip"
 
     if card_type == "alert":
-        return "Handled", "Dismiss"
+        return "Done", "Skip"
 
     if card_type == "tip":
-        return "I'll try it", "Not useful"
+        return "Try", "Skip"
 
-    return "Helpful", "Not useful"
+    return "Good", "Skip"
+
+
+def feedback_button_text(label: str):
+    return ft.Text(
+        label,
+        size=11,
+        max_lines=1,
+        overflow=ft.TextOverflow.ELLIPSIS,
+        text_align=ft.TextAlign.CENTER,
+    )
 
 
 def show_recommendation_card(
@@ -113,11 +138,13 @@ def show_recommendation_card(
                         item_name,
                         icon_color,
                         base_weight=ft.FontWeight.BOLD,
+                        text_color=ft.Colors.BLUE_GREY_900,
                     ),
                     subtitle=highlighted_item_text(
                         subtitle,
                         item_name,
                         icon_color,
+                        text_color=ft.Colors.BLUE_GREY_800,
                     ),
                 ),
                 expand=True,
@@ -164,14 +191,14 @@ def show_ask_card(card_id: str, item: str, subtitle: str, on_feedback):
     positive_label, negative_label = infer_feedback_labels("ask", subtitle)
     buttons = [
         ft.FilledButton(
-            content=ft.Text(positive_label, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS, text_align=ft.TextAlign.CENTER),
-            width=110, height=36,
+            content=feedback_button_text(positive_label),
+            width=96, height=36,
             style=ft.ButtonStyle(bgcolor=ft.Colors.BLUE_800, color=ft.Colors.WHITE),
             on_click=lambda _: on_feedback(card_id, item, "ask", True)
         ),
         ft.OutlinedButton(
-            content=ft.Text(negative_label, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS, text_align=ft.TextAlign.CENTER),
-            width=110, height=36,
+            content=feedback_button_text(negative_label),
+            width=96, height=36,
             on_click=lambda _: on_feedback(card_id, item, "ask", False)
         )
     ]
@@ -191,14 +218,14 @@ def show_alert_card(card_id: str, item: str, subtitle: str, on_feedback):
     positive_label, negative_label = infer_feedback_labels("alert", subtitle)
     buttons = [
         ft.FilledButton(
-            content=ft.Text(positive_label, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS, text_align=ft.TextAlign.CENTER),
-            width=110, height=36,
+            content=feedback_button_text(positive_label),
+            width=96, height=36,
             style=ft.ButtonStyle(bgcolor=ft.Colors.RED_700, color=ft.Colors.WHITE),
             on_click=lambda _: on_feedback(card_id, item, "alert", True)
         ),
         ft.OutlinedButton(
-            content=ft.Text(negative_label, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS, text_align=ft.TextAlign.CENTER),
-            width=110, height=36,
+            content=feedback_button_text(negative_label),
+            width=96, height=36,
             on_click=lambda _: on_feedback(card_id, item, "alert", False)
         )
     ]
@@ -218,14 +245,14 @@ def show_tip_card(card_id: str, item: str, subtitle: str, on_feedback):
     positive_label, negative_label = infer_feedback_labels("tip", subtitle)
     buttons = [
         ft.FilledButton(
-            content=ft.Text(positive_label, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS, text_align=ft.TextAlign.CENTER),
-            width=110, height=36,
+            content=feedback_button_text(positive_label),
+            width=96, height=36,
             style=ft.ButtonStyle(bgcolor=ft.Colors.AMBER_800, color=ft.Colors.WHITE),
             on_click=lambda _: on_feedback(card_id, item, "tip", True)
         ),
         ft.OutlinedButton(
-            content=ft.Text(negative_label, max_lines=1, overflow=ft.TextOverflow.ELLIPSIS, text_align=ft.TextAlign.CENTER),
-            width=110, height=36,
+            content=feedback_button_text(negative_label),
+            width=96, height=36,
             on_click=lambda _: on_feedback(card_id, item, "tip", False)
         )
     ]

@@ -19,6 +19,10 @@ def auth_headers(access_token):
     }
 
 
+def normalize_item_name(item_name):
+    return " ".join((item_name or "").strip().lower().split())
+
+
 def create_household(access_token, name, location):
     url = f"{SUPABASE_URL}/rest/v1/households"
 
@@ -136,7 +140,7 @@ def log_purchased_items(access_token, household_id, item_name, quantity):
     url = f"{SUPABASE_URL}/rest/v1/purchased_items"
     body = {
         "household_id": household_id,
-        "item_name": item_name,
+        "item_name": normalize_item_name(item_name),
         "quantity": quantity,
     }
     response = requests.post(url, headers=auth_headers(access_token), json=body)
@@ -151,7 +155,7 @@ def log_discarded_item(access_token, household_id, item_name, quantity_discarded
     url = f"{SUPABASE_URL}/rest/v1/discarded_items"
     body = {
         "household_id": household_id,
-        "item_name": item_name,
+        "item_name": normalize_item_name(item_name),
         "quantity_discarded": quantity_discarded,
     }
     response = requests.post(url, headers=auth_headers(access_token), json=body)
