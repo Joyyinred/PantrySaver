@@ -43,7 +43,10 @@ def get_modified_households():
         )
         return [row["id"] for row in response.data]
     except Exception as e:
-        print(f"could not fetch modified households (worker.get_modified_households): {e}")
+        print(
+            "could not fetch modified households "
+            f"(worker.get_modified_households): {e}"
+        )
         return []
 
 
@@ -86,7 +89,10 @@ def get_purchased_and_discarded_items(household_id: str):
 
         return purchased.data, discarded.data
     except Exception as e:
-        print(f"could not fetch purchased and discarded items (worker.get_items): {e}")
+        print(
+            "could not fetch purchased and discarded items "
+            f"(worker.get_items): {e}"
+        )
         return [], []
 
 
@@ -114,8 +120,14 @@ def get_item_weights(household_id: str) -> dict[str, float]:
         return {}
 
 
-def get_weight_for_item(item_weights: dict[str, float], item_name: str) -> float:
-    return item_weights.get(item_name, item_weights.get(algorithm.normalize_item_name(item_name), 1.0))
+def get_weight_for_item(
+    item_weights: dict[str, float],
+    item_name: str,
+) -> float:
+    return item_weights.get(
+        item_name,
+        item_weights.get(algorithm.normalize_item_name(item_name), 1.0),
+    )
 
 
 def parse_responded_at(value: str | None) -> datetime | None:
@@ -147,7 +159,10 @@ def apply_alert_feedback_decay(
             .execute()
         )
     except Exception as e:
-        print(f"could not fetch alert feedback history (worker.apply_alert_feedback_decay): {e}")
+        print(
+            "could not fetch alert feedback history "
+            f"(worker.apply_alert_feedback_decay): {e}"
+        )
         return adjusted_weights
 
     now = datetime.now(timezone.utc)
@@ -171,10 +186,16 @@ def apply_alert_feedback_decay(
 
         if days_since_negative_alert >= longterm_change_in_days:
             restored_weight = max(current_weight, 1.0)
-            print(f"reset {item_name} weight to default after old negative alert feedback")
+            print(
+                f"reset {item_name} weight to default after old "
+                "negative alert feedback"
+            )
         elif days_since_negative_alert >= shortterm_change_in_days:
             restored_weight = max(current_weight, 0.6)
-            print(f"partly restored {item_name} weight after negative alert feedback cooled down")
+            print(
+                f"partly restored {item_name} weight after negative "
+                "alert feedback cooled down"
+            )
 
         if restored_weight > current_weight:
             adjusted_weights[item_name] = restored_weight
@@ -189,14 +210,21 @@ def apply_alert_feedback_decay(
                     on_conflict="household_id,item_name",
                 ).execute()
             except Exception as e:
-                print(f"could not persist restored weight for {item_name}: {e}")
+                print(
+                    f"could not persist restored weight for {item_name}: "
+                    f"{e}"
+                )
 
     return adjusted_weights
 
 
 def get_item_categories() -> dict[str, str]:
     try:
-        category_response = supabase.table("categories").select("id,name").execute()
+        category_response = (
+            supabase.table("categories")
+            .select("id,name")
+            .execute()
+        )
         category_names = {
             str(row.get("id")): row.get("name")
             for row in category_response.data
@@ -210,12 +238,18 @@ def get_item_categories() -> dict[str, str]:
         )
 
         return {
-            (row.get("item_name") or "").strip().lower(): category_names.get(str(row.get("category_id")))
+            (row.get("item_name") or "").strip().lower(): category_names.get(
+                str(row.get("category_id"))
+            )
             for row in item_category_response.data
-            if row.get("item_name") and category_names.get(str(row.get("category_id")))
+            if row.get("item_name")
+            and category_names.get(str(row.get("category_id")))
         }
     except Exception as e:
-        print(f"could not fetch item categories (worker.get_item_categories): {e}")
+        print(
+            "could not fetch item categories "
+            f"(worker.get_item_categories): {e}"
+        )
         return {}
 
 
@@ -257,11 +291,17 @@ def get_recommendation_templates() -> dict[str, list[dict]]:
         )
 
         if loaded_count == 0:
-            print("recommendation template table is empty; no recommendations will be generated")
+            print(
+                "recommendation template table is empty; "
+                "no recommendations will be generated"
+            )
 
         return templates
     except Exception as e:
-        print(f"could not fetch recommendation templates (worker.get_recommendation_templates): {e}")
+        print(
+            "could not fetch recommendation templates "
+            f"(worker.get_recommendation_templates): {e}"
+        )
         return {"ask": [], "alert": [], "tip": []}
 
 
@@ -277,7 +317,10 @@ def choose_template(
 
     rule = template_rules.get(template_key, {})
 
-    preferred_ids = {str(template_id) for template_id in rule.get("preferred_ids", [])}
+    preferred_ids = {
+        str(template_id)
+        for template_id in rule.get("preferred_ids", [])
+    }
     for candidate in candidates:
         if str(candidate.get("id")) in preferred_ids:
             return candidate
@@ -289,7 +332,10 @@ def choose_template(
             return candidate
 
     if rule:
-        print(f"no matching database template found for {template_key}; skipping {item_name}")
+        print(
+            f"no matching database template found for {template_key}; "
+            f"skipping {item_name}"
+        )
         return {}
 
     stable_index = sum(ord(char) for char in item_name) % len(candidates)
@@ -305,7 +351,10 @@ def get_logged_category(items: list) -> str | None:
     return None
 
 
-def group_logged_items_by_name(purchased: list, discarded: list) -> dict[str, dict]:
+def group_logged_items_by_name(
+    purchased: list,
+    discarded: list,
+) -> dict[str, dict]:
     grouped_items = {}
 
     for item in discarded + purchased:
@@ -349,10 +398,17 @@ def deactivate_current_recommendations(household_id: str):
             .execute()
         )
     except Exception as e:
-        print(f"could not deactivate old recommendations (worker.deactivate_current_recommendations): {e}")
+        print(
+            "could not deactivate old recommendations "
+            f"(worker.deactivate_current_recommendations): {e}"
+        )
 
 
-def save_recommendations(household_id: str, plans: list[algorithm.RecommendationPlan], templates: dict):
+def save_recommendations(
+    household_id: str,
+    plans: list[algorithm.RecommendationPlan],
+    templates: dict,
+):
     rows = []
     seen_cards = set()
 
@@ -365,10 +421,18 @@ def save_recommendations(household_id: str, plans: list[algorithm.Recommendation
 
         candidates = templates.get(plan.card_type) or []
         if not candidates:
-            print(f"no database template found for {plan.card_type}; skipping {plan.item_name}")
+            print(
+                f"no database template found for {plan.card_type}; "
+                f"skipping {plan.item_name}"
+            )
             continue
 
-        template = choose_template(templates, plan.card_type, plan.item_name, plan.template_key)
+        template = choose_template(
+            templates,
+            plan.card_type,
+            plan.item_name,
+            plan.template_key,
+        )
         if not template:
             continue
 
@@ -379,7 +443,10 @@ def save_recommendations(household_id: str, plans: list[algorithm.Recommendation
                 "template_id": template.get("id"),
                 "item_name": plan.item_name,
                 "type": plan.card_type,
-                "subtitle": algorithm.render_template(template["template_text"], plan.item_name),
+                "subtitle": algorithm.render_template(
+                    template["template_text"],
+                    plan.item_name,
+                ),
                 "score": float(plan.score),
                 "is_active": True,
             }
@@ -397,7 +464,10 @@ def save_recommendations(household_id: str, plans: list[algorithm.Recommendation
         supabase.table("recommendations").insert(rows).execute()
         return len(rows)
     except Exception as e:
-        print(f"could not save recommendations (worker.save_recommendations): {e}")
+        print(
+            "could not save recommendations "
+            f"(worker.save_recommendations): {e}"
+        )
         return 0
 
 
@@ -412,7 +482,11 @@ def process_household(
     print()
 
     purchased, discarded = get_purchased_and_discarded_items(household_id)
-    item_ratios = algorithm.calculate_ratios(household_id, purchased, discarded)
+    item_ratios = algorithm.calculate_ratios(
+        household_id,
+        purchased,
+        discarded,
+    )
     item_weights = apply_alert_feedback_decay(
         household_id=household_id,
         item_weights=get_item_weights(household_id),
@@ -456,7 +530,8 @@ def process_household(
         if plan:
             plans.append(plan)
             print(
-                f"{plan.card_type.upper()} {item_name}: template={plan.template_key}, "
+                f"{plan.card_type.upper()} {item_name}: "
+                f"template={plan.template_key}, "
                 f"score={plan.score:.2f}, ratio={ratio:.1%}, "
                 f"weight={weight:.2f}, reason={plan.reason}"
             )
@@ -470,7 +545,12 @@ def process_household(
     print(f"saved {saved_count} recommendation(s)")
 
     try:
-        supabase.table("households").update({"modified": False}).eq("id", household_id).execute()
+        (
+            supabase.table("households")
+            .update({"modified": False})
+            .eq("id", household_id)
+            .execute()
+        )
     except Exception as e:
         print(f"could not reset modified (worker.process_household): {e}")
 
@@ -486,5 +566,8 @@ def fetch_household_name(household_id: str):
         )
         return response.data["name"]
     except Exception as e:
-        print(f"could not fetch household name (worker.fetch_household_name): {e}")
+        print(
+            "could not fetch household name "
+            f"(worker.fetch_household_name): {e}"
+        )
         return "no household name"

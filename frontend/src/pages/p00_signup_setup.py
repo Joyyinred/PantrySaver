@@ -1,7 +1,7 @@
 import flet as ft
 
 from api.supabase_db import (
-    create_household, 
+    create_household,
     create_user_profile,
     get_household_by_join_code,
     clear_join_code,
@@ -18,7 +18,7 @@ def SignupSetupPage(auth_result, on_setup_complete):
     household_name_input = ft.TextField(label="Household Name", width=300)
     location_input = ft.TextField(label="Location", width=300)
     join_code_input = ft.TextField(
-        label="Household Join Code", 
+        label="Household Join Code",
         width=300,
         hint_text="Enter 6-character code"
     )
@@ -84,10 +84,10 @@ def SignupSetupPage(auth_result, on_setup_complete):
         setup_mode["value"] = "create"
         view.controls = get_create_household_controls()
         view.update()
-    
+
     def show_join_household(e=None):
         message_text.value = ""
-        join_code_input.value = ""  
+        join_code_input.value = ""
 
         if not validate_name():
             return
@@ -147,8 +147,8 @@ def SignupSetupPage(auth_result, on_setup_complete):
                 message_text.value = "Invalid join code. Please check and try again."
                 view.controls = get_join_household_controls()
                 view.update()
-                return            
-    
+                return
+
             if not household_id:
                 message_text.value = "Error: Could not retrieve household ID."
                 view.controls = get_join_household_controls()
@@ -157,10 +157,10 @@ def SignupSetupPage(auth_result, on_setup_complete):
 
             save_user_with_household(household)
             clear_join_code(access_token, household_id)
-            
+
 
         except Exception as ex:
-           
+
             message_text.value = f"Failed to join household= {ex}"
             view.controls = get_join_household_controls()
             view.update()

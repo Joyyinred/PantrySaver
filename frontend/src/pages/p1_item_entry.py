@@ -161,7 +161,10 @@ def LogFoodPage(session, page: ft.Page):
                     f"path={selected_file.path}, has_bytes={bool(selected_bytes)}"
                 )
                 page.snack_bar = ft.SnackBar(
-                    ft.Text("The selected file was not readable for OCR. Try running from the Mac web app or choose an image.")
+                    ft.Text(
+                        "The selected file was not readable for OCR. "
+                        "Try running from the Mac web app or choose an image."
+                    )
                 )
                 page.snack_bar.open = True
                 page.update()

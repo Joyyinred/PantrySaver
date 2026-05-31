@@ -30,7 +30,10 @@ def parse_logged_at(value: str | None) -> datetime | None:
         return None
 
 
-def get_sorted_timestamps(items: list, key: str = "logged_at") -> list[datetime]:
+def get_sorted_timestamps(
+    items: list,
+    key: str = "logged_at",
+) -> list[datetime]:
     timestamps = []
 
     for item in items:
@@ -72,20 +75,30 @@ def evaluate_item_status(
 
         if days_since_waste >= longterm_change_in_days:
             status = ItemStatus.green
-        elif days_since_waste >= shortterm_change_in_days and status == ItemStatus.red:
+        elif (
+            days_since_waste >= shortterm_change_in_days
+            and status == ItemStatus.red
+        ):
             status = ItemStatus.yellow
 
     return status, was_logged_as_purchased
 
 
-def calculate_ratios(household_id: str, purchased: list, discarded: list) -> dict[str, float]:
+def calculate_ratios(
+    household_id: str,
+    purchased: list,
+    discarded: list,
+) -> dict[str, float]:
     calculated_ratios = {}
     discarded_unique = {
         normalize_item_name(d.get("item_name"))
         for d in discarded
         if normalize_item_name(d.get("item_name"))
     }
-    total_discarded = sum(float(item.get("quantity_discarded") or 0) for item in discarded)
+    total_discarded = sum(
+        float(item.get("quantity_discarded") or 0)
+        for item in discarded
+    )
 
     for name in discarded_unique:
         purchased_quantity = sum(
@@ -98,7 +111,11 @@ def calculate_ratios(household_id: str, purchased: list, discarded: list) -> dic
             for item in discarded
             if normalize_item_name(item.get("item_name")) == name
         )
-        portion = discarded_quantity / total_discarded if total_discarded else 0
+        portion = (
+            discarded_quantity / total_discarded
+            if total_discarded
+            else 0
+        )
 
         if purchased_quantity == 0:
             ratio = None
@@ -143,7 +160,10 @@ def detect_missing_purchase_log(
     return not recent_purchase_dates
 
 
-def was_never_logged_as_bought(purchased_items: list, discarded_items: list) -> bool:
+def was_never_logged_as_bought(
+    purchased_items: list,
+    discarded_items: list,
+) -> bool:
     return bool(discarded_items) and not purchased_items
 
 
@@ -168,10 +188,15 @@ def is_fresh_produce_category(category_name: str | None) -> bool:
 
 
 def pick_tip_template_key(category_name: str | None) -> str:
-    return "use_soon_tip" if is_fresh_produce_category(category_name) else "nutrition_tip"
+    if is_fresh_produce_category(category_name):
+        return "use_soon_tip"
+
+    return "nutrition_tip"
 
 
-def choose_highest_scoring_plan(candidates: list[RecommendationPlan]) -> RecommendationPlan | None:
+def choose_highest_scoring_plan(
+    candidates: list[RecommendationPlan],
+) -> RecommendationPlan | None:
     if not candidates:
         return None
 
@@ -180,7 +205,13 @@ def choose_highest_scoring_plan(candidates: list[RecommendationPlan]) -> Recomme
         "ask": 2,
         "tip": 1,
     }
-    return max(candidates, key=lambda plan: (plan.score, type_priority.get(plan.card_type, 0)))
+    return max(
+        candidates,
+        key=lambda plan: (
+            plan.score,
+            type_priority.get(plan.card_type, 0),
+        ),
+    )
 
 
 def plan_recommendation(
@@ -199,7 +230,10 @@ def plan_recommendation(
         shortterm_change_in_days,
         longterm_change_in_days,
     )
-    forgot_to_log = detect_missing_purchase_log(purchased_items, discarded_items)
+    forgot_to_log = detect_missing_purchase_log(
+        purchased_items,
+        discarded_items,
+    )
     never_bought = was_never_logged_as_bought(purchased_items, discarded_items)
     now = datetime.now(timezone.utc)
     discard_dates = get_sorted_timestamps(discarded_items)
@@ -231,7 +265,10 @@ def plan_recommendation(
             reason = (
                 "Discard was logged with no purchase history for this item."
                 if never_bought
-                else "Discard was logged without a matching recent purchase log."
+                else (
+                    "Discard was logged without a matching recent "
+                    "purchase log."
+                )
             )
             candidates.append(
                 RecommendationPlan(
@@ -252,7 +289,10 @@ def plan_recommendation(
                     item_name=item_name,
                     card_type="ask",
                     score=min(adaptive_score + 0.6, 5.0),
-                    reason="Item has been bought more than once and only partly discarded.",
+                    reason=(
+                        "Item has been bought more than once and only "
+                        "partly discarded."
+                    ),
                     template_key="inventory_check",
                 )
             )
@@ -263,7 +303,10 @@ def plan_recommendation(
                 item_name=item_name,
                 card_type="alert",
                 score=min(adaptive_score + 1.2, 5.0),
-                reason="High waste risk from discard history, ratio, and missing purchase data.",
+                reason=(
+                    "High waste risk from discard history, ratio, and "
+                    "missing purchase data."
+                ),
                 template_key="high_waste_risk",
             )
         )
@@ -275,12 +318,17 @@ def plan_recommendation(
                     item_name=item_name,
                     card_type="alert",
                     score=min(adaptive_score + 1.0, 5.0),
-                    reason="Repeated discard history suggests the item needs attention soon.",
+                    reason=(
+                        "Repeated discard history suggests the item needs "
+                        "attention soon."
+                    ),
                     template_key="expiration_risk",
                 )
             )
 
-    if discarded_items and (status == ItemStatus.yellow or was_logged_as_purchased):
+    if discarded_items and (
+        status == ItemStatus.yellow or was_logged_as_purchased
+    ):
         if item_weight >= 0.5:
             template_key = pick_tip_template_key(category_name)
             candidates.append(
@@ -288,7 +336,10 @@ def plan_recommendation(
                     item_name=item_name,
                     card_type="tip",
                     score=min(adaptive_score + 0.45, 5.0),
-                    reason="Item has been discarded before; a gentle action may prevent repeat waste.",
+                    reason=(
+                        "Item has been discarded before; a gentle action "
+                        "may prevent repeat waste."
+                    ),
                     template_key=template_key,
                 )
             )

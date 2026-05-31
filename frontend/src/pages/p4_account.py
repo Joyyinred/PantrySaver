@@ -25,19 +25,18 @@ def AccountPage(on_logout_click, user_profile=None, household=None):
 
     header = show_header(
         title="My Account",
-        subtitle="Manage your household and invite members!"
+        subtitle="Manage your household and invite members!",
     )
 
     code_display = ft.Text(
-        "12345", 
-        size=40, 
-        weight=ft.FontWeight.BOLD, 
+        "12345",
+        size=40,
+        weight=ft.FontWeight.BOLD,
         color=ft.Colors.BLUE_800,
-        opacity=0, 
-        animate_opacity=1000
+        opacity=0,
+        animate_opacity=1000,
     )
 
-    # TODO - should generate a one time code for new user and add to database of household. The new user can use that code to join household, that should erase the code from the database.
     async def on_invite_click(e):
         try:
             access_token = user_profile.get("access_token")
@@ -53,12 +52,12 @@ def AccountPage(on_logout_click, user_profile=None, household=None):
             await asyncio.sleep(10)
             code_display.opacity = 0
             code_display.update()
-        except Exception as e: 
+        except Exception as e:
             print (f' "Error when generating code: " , {e}')
 
     logout_btn = show_big_round_button(ft.Icons.LOGOUT, ft.Colors.RED_700)
     logout_btn.on_click = on_logout_click
-    
+
     invite_btn = show_big_round_button(ft.Icons.GROUP_ADD, ft.Colors.BLUE_800)
     invite_btn.on_click = on_invite_click
 
@@ -70,7 +69,7 @@ def AccountPage(on_logout_click, user_profile=None, household=None):
                     ft.Icon(ft.Icons.ACCOUNT_CIRCLE, size=80, color=ft.Colors.BLUE_800),
                     ft.Text(full_name, weight=ft.FontWeight.BOLD, size=20),
                     ft.Text(household_name.upper(), size=14, color=ft.Colors.GREY_600),
-                    code_display, 
+                    code_display,
                 ],
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 spacing=10,

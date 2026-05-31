@@ -113,7 +113,10 @@ def RecommendationPage(session, page: ft.Page):
             card_container.controls.clear()
 
             if not recommendations_data:
-                show_message("No active recommendations yet. Log purchases and discarded food to run the adaptive loop.")
+                show_message(
+                    "No active recommendations yet. Log purchases and "
+                    "discarded food to run the adaptive loop."
+                )
                 return
 
             for row in recommendations_data:

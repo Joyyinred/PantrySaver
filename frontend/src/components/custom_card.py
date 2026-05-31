@@ -182,9 +182,11 @@ def show_recommendation_card(
         animate=ft.Animation(200, ft.AnimationCurve.EASE_OUT)
     )
 
+
 def format_recommendation(item_name: str, template_text: str, card_type: str):
     body = template_text.replace("!ITEM!", item_name)
     return recommendation_title(card_type, item_name), body
+
 
 def show_ask_card(card_id: str, item: str, subtitle: str, on_feedback):
     positive_label, negative_label = infer_feedback_labels("ask", subtitle)

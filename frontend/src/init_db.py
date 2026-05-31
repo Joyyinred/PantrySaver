@@ -1,5 +1,6 @@
 import sqlite3
 
+
 def init_database():
 
     conn = sqlite3.connect('database.db')
@@ -142,6 +143,7 @@ def init_database():
 
     conn.commit()
     conn.close()
+
 
 if __name__ == '__main__':
 

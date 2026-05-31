@@ -40,13 +40,13 @@ def get_color_by_value(value):
 
 def stat_row(label, value):
     bar_color = get_color_by_value(value)
-    
+
     return ft.Column([
         ft.Text(f"{label} - {int(value * 100)}%", weight=ft.FontWeight.W_500),
         ft.ProgressBar(
-            value=value, 
-            color=bar_color, 
-            bgcolor=ft.Colors.GREY_200, 
+            value=value,
+            color=bar_color,
+            bgcolor=ft.Colors.GREY_200,
             width=300
         ),
     ], spacing=5)
