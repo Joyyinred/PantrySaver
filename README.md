@@ -38,9 +38,9 @@ project-course-pantry-saver/
 
 ## Environment Variables
 
-The algorithm worker and frontend need Supabase environment variables.
+The algorithm worker needs Supabase environment variables. The frontend already contains the public Supabase URL and anon key used by the app.
 
-Create a `.env` file in the project root, or inside the `algorithm` and `frontend` folders:
+Create a `.env` file in the project root or inside the `algorithm` folder:
 
 ```env
 SUPABASE_URL=https://mhavpdfogtoanjdaluox.supabase.co
@@ -49,7 +49,7 @@ SUPABASE_KEY=sb_publishable_WSh3sw_jmKTqJdd7SYf__Q_iSj15XoA
 
 ## Run Algorithm
 
-The instructions vary slightly depending on your system. There are 2 files to run, one for front end and one for backened, since the algorithm and the worker will not be on user's device.
+The instructions vary slightly depending on your system. There are 2 files to run, one for the frontend and one for the recommendation worker. The worker acts as the backend algorithm process and is not part of the mobile ui.
 
 Here come instructions for backend (algorithm):
 
@@ -123,10 +123,10 @@ The recommendation engine lives in `algorithm/` and runs as a MAPE loop:
 
 - Monitor: find Supabase households where `households.modified = true`
 - Analyze: read purchase/discard history and calculate waste ratios
-- Plan: choose `ask`, `tip`, or `alert` recommendations using waste ratio, discard frequency, purchase age, item shelf-life, recency, and item feedback weights
+- Plan: choose `ask`, `tip`, or `alert` recommendations using waste ratio, discard frequency, purchase history, recency, item categories, feedback weights, and recommendation score
 - Execute: render Supabase `recommendation_templates.template_text` values by replacing `!ITEM!`, then write active rows to `recommendations`
 
-The frontend logs household events, shows active recommendations, and sends feedback that updates `item_intelligence`. Positive feedback marks a recommendation as helpful, slightly raises its stored score, and increases the item weight for future recommendations. Negative feedback marks it as not useful, lowers its stored score, and decreases the item weight so similar future recommendations become less likely or lower priority.
+The frontend logs household events, shows active recommendations, and sends feedback that updates `item_intelligence`. Positive feedback marks a recommendation as helpful and can strengthen future recommendations for that item. Negative feedback marks it as not useful and decreases the item weight so similar future recommendations become less likely. Alert feedback also cools down over time: after 30 days the item weight can partly recover, and after 90 days it can reset to the default. The stored recommendation score is used to choose the strongest card type when more than one recommendation could apply to the same item.
 
 The worker runs in the backend. This keeps the frontend responsible for UI only, while the MAPE loop lives in `algorithm/`.
 
